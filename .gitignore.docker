@@ -1,0 +1,7 @@
+## Docker
+Dockerfile.*
+docker-compose.override.yml
+.docker/
+.dockerignore
+**/.docker-temp/
+**/.docker-build/
