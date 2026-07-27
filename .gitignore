@@ -82,6 +82,7 @@ develop-eggs/
 .pyre/
 .tox/
 .env/
+.venv/
 venv/
 ENV/
 env/
