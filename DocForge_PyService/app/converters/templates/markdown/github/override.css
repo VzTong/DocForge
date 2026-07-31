@@ -1,0 +1,36 @@
+
+/* =====================================================
+   DocForge Overrides
+   ===================================================== */
+
+@page {
+
+    size: A4;
+
+    margin: 2cm;
+
+    @bottom-center {
+
+        content: counter(page);
+
+        font-size: 10pt;
+
+        color: #777;
+    }
+}
+
+body{
+
+    margin:0;
+
+    background:white;
+}
+
+.markdown-body{
+
+    max-width:850px;
+
+    margin:auto;
+
+    padding:0;
+}

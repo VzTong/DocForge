@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ title }}</title>
+        <style>{{ css }}</style>
+    </head>
+    <body>
+        <div class="cv-container">
+            <header class="cv-header">
+                <h1>{{ title }}</h1>
+                {% if subtitle %}<p class="cv-subtitle">{{ subtitle }}</p>{% endif %}
+                {% if contact %}<p class="cv-contact">{{ contact }}</p>{% endif %}
+            </header>
+            <hr>
+            <main class="cv-body">
+                {{ body }}
+            </main>
+        </div>
+    </body>
+</html>
