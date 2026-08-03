@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.converters.md2pdf import MarkdownToPdfConverter
+from app.converters.markdown.md2pdf import MarkdownToPdfConverter
+from app.converters.markdown.meta import split_document_header
 from app.main import app
 
 from pathlib import Path
@@ -64,6 +65,14 @@ def test_convert_md_return_pdf_or_442():
     assert response.status_code in (200, 422)
     if response.status_code == 200:
         assert response.headers["content-type"] == "application/pdf"
+
+
+def test_render_document_theme_supports_page_size_option():
+    """Theme document phải nhận page_size và render CSS tương ứng."""
+    converter = MarkdownToPdfConverter(theme="document", title="Test Document")
+    html = converter._render_html(SAMPLE_MD, page_size="Letter")
+
+    assert "size: Letter;" in html
 
 # def test_debug_show_html():
 #     """Test tạm để nhìn HTML render ra - mở file bằng trình duyệt."""
@@ -155,10 +164,11 @@ def test_cv_theme_render_html():
     html = converter._render_html(SAMPLE_CV_MD)
 
     assert "<h1>Nguyễn Văn A</h1>" in html
-    assert "Backend Developer" in html
+    assert "<strong>Backend Developer</strong>" in html
     assert "email@example.com" in html
     assert "0909 123 456" in html
-    assert "<hr>" in html
+    assert 'href="https://linkedin.com/in/nguyenvana"' in html
+    assert "<hr>" not in html
     assert "<main class=\"cv-body\">" in html
 
 
@@ -181,3 +191,33 @@ def test_convert_cv_md_to_pdf():
     assert response.status_code in (200, 422)
     if response.status_code == 200:
         assert response.headers["content-type"] == "application/pdf"
+
+
+def test_preview_md_to_pdf_cv_metadata_not_duplicated():
+    """Preview từ Markdown CV không được render lặp metadata ở body."""
+    response = client.post(
+        "/preview/md-to-pdf",
+        json={
+            "contents": SAMPLE_CV_MD,
+            "theme": "cv",
+            "title": "Nguyễn Văn A",
+            "subtitle": "Backend Developer",
+            "contact": "email@example.com | 0909 123 456",
+        },
+    )
+    assert response.status_code in (200, 422)
+    if response.status_code == 200:
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.headers["content-disposition"].startswith("inline")
+
+
+def test_split_document_header_extracts_address_and_links():
+    """Header CV phải tách được cả address và links."""
+    title, subtitle, contact, address, links, body = split_document_header(SAMPLE_CV_MD)
+
+    assert title == "Nguyễn Văn A"
+    assert subtitle == "**Backend Developer**"
+    assert contact == "📧 email@example.com | 📱 0909 123 456"
+    assert address == "📍 TP. Hồ Chí Minh, Việt Nam"
+    assert links == "[LinkedIn](https://linkedin.com/in/nguyenvana) | [GitHub](https://github.com/nguyenvana)"
+    assert "Tóm tắt nghề nghiệp" in body

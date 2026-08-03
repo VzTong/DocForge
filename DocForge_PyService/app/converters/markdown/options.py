@@ -17,10 +17,3 @@ class MarkdownThemeOptions(str, Enum):
     DOCUMENT = "document"
     GITHUB = "github"
     CV = "cv"
-
-
-class PageSize(str, Enum):
-    """Supported PDF page sizes."""
-
-    A4 = "A4"
-    LETTER = "Letter"

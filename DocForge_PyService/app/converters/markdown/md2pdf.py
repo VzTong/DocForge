@@ -40,11 +40,13 @@ Lưu ý:
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import markdown
+import re
 
 from app.converters.base import BaseConverter, ConversionError
-from app.converters.MarkdownThemeRenderer import MarkdownTheme
+from app.converters.markdown.ThemeRender import MarkdownTheme
 
 class MarkdownToPdfConverter(BaseConverter):
     """
@@ -68,10 +70,12 @@ class MarkdownToPdfConverter(BaseConverter):
 
     def __init__(
         self,
-        theme: str = "document",
-        title: str = "Document",
+        theme: str = "cv",
+        title: str = "",
         subtitle: str = "",
         contact: str = "",
+        address: str = "",
+        links: str = "",
     ) -> None:
         """
         Initialize the Markdown converter.
@@ -92,32 +96,38 @@ class MarkdownToPdfConverter(BaseConverter):
             contact:
                 Optional contact info (e.g. email / phone).
                 Used by the CV theme template.
+
+            address:
+                Optional address line shown below contact.
+
+            links:
+                Optional profile links line shown below address.
         """
 
         self.theme = MarkdownTheme(theme)
         self.title = title
         self.subtitle = subtitle
         self.contact = contact
+        self.address = address
+        self.links = links
 
-    def _render_html(self, md_text: str) -> str:
+    def _render_html(self, md_text: str, **options: Any) -> str:
         """
         Convert Markdown into a complete HTML document.
-
-        The rendering process consists of two stages:
-
-        1. Parse Markdown into HTML fragments.
-        2. Apply the selected theme (HTML template + CSS).
-
-        This method does NOT generate the PDF.
-        It only prepares the final HTML for WeasyPrint.
-
-        Args:
-            md_text:
-                Raw Markdown content.
-
-        Returns:
-            Complete HTML document.
         """
+        # Cho phép options đè lên các giá trị khởi tạo
+        theme_name = options.get("theme", self.theme.name)
+        title = options.get("title", self.title)
+        subtitle = options.get("subtitle", self.subtitle)
+        contact = options.get("contact", self.contact)
+        address = options.get("address", self.address)
+        links = options.get("links", self.links)
+        page_size = options.get("page_size", "A4")
+
+        # Nếu theme trong options khác với theme hiện tại, tạo renderer mới
+        renderer = self.theme
+        if theme_name != self.theme.name:
+            renderer = MarkdownTheme(theme_name)
 
         body = markdown.markdown(
             md_text,
@@ -128,81 +138,58 @@ class MarkdownToPdfConverter(BaseConverter):
             ],
         )
 
-        return self.theme.render(
-            title=self.title,
+        def render_inline_markdown(text: str | None) -> str:
+            if not text:
+                return ""
+            rendered = markdown.markdown(text, extensions=["nl2br"])
+            match = re.fullmatch(r"<p>(.*)</p>", rendered, flags=re.S)
+            return match.group(1) if match else rendered
+
+        return renderer.render(
+            title=title,
+            subtitle_html=render_inline_markdown(subtitle),
+            contact_html=render_inline_markdown(contact),
+            address_html=render_inline_markdown(address),
+            links_html=render_inline_markdown(links),
+            page_size=page_size,
             body=body,
-            subtitle=self.subtitle,
-            contact=self.contact,
         )
 
-    def convert(self, input_path: Path, out_dir: Path) -> Path:
+    def convert_from_text(self, md_text: str, out_dir: Path, **options: Any) -> Path:
         """
-        Convert a Markdown file into PDF.
-
-        Args:
-            input_path:
-                Source Markdown file.
-
-            out_dir:
-                Directory where the generated PDF will be stored.
-
-        Returns:
-            Path to the generated PDF.
-
-        Raises:
-            ConversionError:
-                If the source cannot be read,
-                WeasyPrint cannot be initialized,
-                or PDF generation fails.
+        Chuyển đổi trực tiếp từ text Markdown sang PDF.
         """
-
-        # Import lazily so the service can still start even if
-        # WeasyPrint system dependencies are not installed.
         try:
             from weasyprint import HTML
-
         except OSError as e:
-            raise ConversionError(
-                "WeasyPrint import failed.\n"
-                "Please ensure required system libraries are installed.\n"
-                "Windows : GTK3 Runtime.\n"
-                "Linux   : libpango, cairo, gdk-pixbuf, libffi.\n\n"
-                f"Original error: {e}"
-            ) from e
+            raise ConversionError(f"WeasyPrint import failed: {e}") from e
 
-        # Read Markdown source.
-        try:
-            md_text = input_path.read_text(
-                encoding="utf-8"
-            )
-
-        except Exception as e:  # noqa: BLE001
-            raise ConversionError(
-                f"Failed to read '{input_path}'."
-            ) from e
-
-        out_dir.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        pdf_path = out_dir / f"{input_path.stem}.pdf"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        filename = options.get("filename", "output")
+        pdf_path = out_dir / f"{filename}.pdf"
 
         # Markdown -> HTML
-        html = self._render_html(md_text)
+        html = self._render_html(md_text, **options)
 
         # HTML -> PDF
         try:
             HTML(string=html).write_pdf(str(pdf_path))
-
-        except Exception as e:  # noqa: BLE001
-            raise ConversionError(
-                f"Failed to generate PDF: {e}"
-            ) from e
-
-        if not pdf_path.exists():
-            raise ConversionError(
-                f"PDF was not created: {pdf_path}"
-            )
+        except Exception as e:
+            raise ConversionError(f"Failed to generate PDF: {e}") from e
 
         return pdf_path
+
+    def convert(self, input_path: Path, out_dir: Path, **options: Any) -> Path:
+        """
+        Convert a Markdown file into PDF.
+        """
+        try:
+            md_text = input_path.read_text(encoding="utf-8")
+        except Exception as e:
+            raise ConversionError(f"Failed to read '{input_path}'.") from e
+
+        # Sử dụng lại logic convert_from_text
+        if "filename" not in options:
+            options["filename"] = input_path.stem
+
+        return self.convert_from_text(md_text, out_dir, **options)

@@ -24,6 +24,7 @@ Its only responsibility is converting:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from app.converters.base import ConversionError
@@ -37,11 +38,10 @@ from jinja2 import Environment, FileSystemLoader
 # templates/
 # └── markdown/
 #     ├── modern/
-#     ├── github/
 #     └── cv/
 #
 THEME_ROOT = (
-    Path(__file__).parent
+    Path(__file__).resolve().parent.parent
     / "templates"
     / "markdown"
 )
@@ -65,7 +65,7 @@ class MarkdownTheme:
     All CSS files are automatically merged in alphabetical order.
     """
 
-    def __init__(self, name: str = "modern") -> None:
+    def __init__(self, name: str = "document") -> None:
         """
         Initialize a rendering theme.
 
@@ -73,7 +73,7 @@ class MarkdownTheme:
             name:
                 Theme name.
                 Example:
-                    modern
+                    document
                     github
                     cv
         """
@@ -115,7 +115,7 @@ class MarkdownTheme:
                 f"Template file not found: {self.template_path}"
             )
 
-    def _load_stylesheets(self) -> str:
+    def _load_stylesheets(self, page_size: str = "A4") -> str:
         """
         Load every CSS file inside the theme directory.
 
@@ -142,9 +142,15 @@ class MarkdownTheme:
         if not css_files:
             raise ConversionError(f"No CSS file found in theme '{self.name}'.")
 
-        return "\n\n".join(
+        css = "\n\n".join(
             css_file.read_text(encoding="utf-8")
             for css_file in css_files
+        )
+
+        return re.sub(
+            r"(?m)(^\s*size:\s*)([^;]+)(;)",
+            rf"\1{page_size}\3",
+            css,
         )
 
     # ------------------------------------------------------------------
@@ -156,7 +162,8 @@ class MarkdownTheme:
         *,
         title: str,
         body: str,
-        **kwargs,
+        page_size: str = "A4",
+        **kwargs, # theme nào không dùng các biến này thì bỏ qua, theme nào cần thì dùng
     ) -> str:
         """
         Render a complete HTML document.
@@ -185,7 +192,7 @@ class MarkdownTheme:
 
         template = env.get_template("template.j2")
 
-        css = self._load_stylesheets()
+        css = self._load_stylesheets(page_size=page_size)
 
         return template.render(
             title=title,

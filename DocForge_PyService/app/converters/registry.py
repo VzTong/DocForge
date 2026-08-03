@@ -3,10 +3,13 @@ Thêm converter mới: chỉ cần implement BaseConverter và thêm vào regist
 from __future__ import annotations
 
 from app.converters.base import BaseConverter
-from app.converters.md2pdf import MarkdownToPdfConverter
+from app.converters.markdown.md2pdf import MarkdownToPdfConverter
 
 _CONVERTER_REGISTRY: dict[str, BaseConverter] = {
-    MarkdownToPdfConverter.name: MarkdownToPdfConverter(),
+    c.name: c() for c in (
+        MarkdownToPdfConverter,
+    )
+    # MarkdownToPdfConverter.name: MarkdownToPdfConverter()
     # TODO phase sau:
     # pdfToDocxConverter.name: PdfToDocxConverter(),
     # docxToPdfConverter.name: DocxToPdfConverter(),

@@ -32,6 +32,7 @@ body {
 .cv-header {
     text-align: center;
     margin-bottom: 0;
+    padding-bottom: 12px;
 }
 
 .cv-header h1 {
@@ -48,10 +49,32 @@ body {
     font-weight: 400;
 }
 
+.cv-subtitle p,
+.cv-contact p {
+    margin: 0;
+}
+
 .cv-contact {
     font-size: 10pt;
     margin: 0;
     color: #666;
+}
+
+.cv-address,
+.cv-links {
+    font-size: 10pt;
+    margin: 1px 0 0 0;
+    color: #666;
+}
+
+.cv-links a {
+    color: #444;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+
+.cv-links a:hover {
+    border-bottom-color: #444;
 }
 
 /* ---------- Horizontal rule ---------- */
