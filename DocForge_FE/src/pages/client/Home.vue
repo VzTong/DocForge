@@ -4,11 +4,11 @@
     <section class="hero-section">
       <div class="hero-bg">
         <div class="hero-gradient"></div>
-        <!-- Ảnh chấm bi từ kho hình thay cho pattern CSS -->
+        <!-- Ảnh chấm bi từ kho hình-->
         <img src="/images/shapes/banner-two-pattern.png" alt="" class="hero-pattern" />
       </div>
 
-      <!-- Ảnh trang trí từ kho hình (thay cho khối blur trước đây) -->
+      <!-- Ảnh trang trí từ kho hình-->
       <div class="floating-elements">
         <img src="/images/shapes/about-two-shape-1.png" alt="" class="floating-element element-1" />
         <img src="/images/shapes/about-two-shape-2.png" alt="" class="floating-element element-2" />
@@ -18,24 +18,24 @@
 
       <div class="container">
         <div class="hero-content text-center">
-          <div class="hero-badge animate-fade-in">
+          <div class="hero-badge js-hero-badge">
             <i class="bi bi-stars text-ocean"></i>
             <span>Bộ công cụ chuyển đổi tài liệu</span>
             <i class="bi bi-arrow-left-right text-primary"></i>
           </div>
 
-          <h1 class="hero-title animate-slide-up">
-            <span class="title-primary">Chuyển đổi tài liệu</span>
-            <span class="title-highlight text-gradient-sunset">Nhanh</span>
-            <span class="title-secondary text-gradient-ocean"> Chính xác</span>
+          <h1 class="hero-title">
+            <span class="title-primary js-hero-title">Chuyển đổi tài liệu</span>
+            <span class="title-highlight text-gradient-sunset js-hero-title">Nhanh</span>
+            <span class="title-secondary text-gradient-ocean js-hero-title"> Chính xác</span>
           </h1>
 
-          <p class="hero-subtitle animate-fade-in mx-auto" style="animation-delay: 0.3s">
+          <p class="hero-subtitle js-hero-subtitle mx-auto">
             DocForge tập hợp các công cụ chuyển đổi Markdown, PDF, Word và văn bản thuần
             về đúng định dạng bạn cần — bắt đầu với Markdown → PDF, nhiều định dạng khác đang được xây dựng.
           </p>
 
-          <div class="hero-actions animate-scale-in justify-content-center" style="animation-delay: 0.7s">
+          <div class="hero-actions js-hero-actions justify-content-center">
             <router-link to="/convert" class="btn btn-ocean btn-lg hover-lift">
               <i class="bi bi-file-earmark-arrow-down"></i>
               <span>Dùng Markdown → PDF ngay</span>
@@ -54,11 +54,11 @@
     <section class="demo-section py-5">
       <div class="container">
         <div class="text-center mb-4">
-          <div class="section-badge animate-fade-in">
+          <div class="section-badge js-reveal">
             <i class="bi bi-lightning-charge text-ocean"></i>
             <span>Thử ngay</span>
           </div>
-          <h2 class="section-title animate-slide-up">
+          <h2 class="section-title js-reveal">
             Gõ <span class="text-gradient-primary">Markdown</span>,
             xem <span class="text-gradient-ocean">PDF</span> ngay lập tức
           </h2>
@@ -83,7 +83,7 @@
                 <i class="bi bi-eye text-ocean"></i>
                 Xem trước PDF
               </label>
-              <div class="demo-preview">
+              <div class="demo-preview" ref="demoPreviewEl">
                 <iframe v-if="demoPreviewUrl" :src="demoPreviewUrl" class="demo-preview-frame" title="Xem trước"></iframe>
                 <div v-else class="demo-preview-placeholder">
                   <i class="bi bi-file-earmark-pdf"></i>
@@ -108,14 +108,14 @@
       <img src="/images/shapes/why-choose-two-pattern.png" alt="" class="tools-bg-pattern" />
       <div class="container">
         <div class="text-center mb-5">
-          <div class="section-badge animate-fade-in">
+          <div class="section-badge js-reveal">
             <i class="bi bi-grid text-ocean"></i>
             <span>Các công cụ</span>
           </div>
-          <h2 class="section-title animate-slide-up">
+          <h2 class="section-title js-reveal">
             Một nền tảng, <span class="text-gradient-primary">nhiều định dạng</span>
           </h2>
-          <p class="section-subtitle animate-fade-in" style="animation-delay: 0.2s">
+          <p class="section-subtitle js-reveal">
             Markdown → PDF đã sẵn sàng, các công cụ còn lại đang được xây dựng
           </p>
         </div>
@@ -125,9 +125,9 @@
             <component
               :is="tool.status === 'available' ? 'router-link' : 'div'"
               :to="tool.status === 'available' ? tool.to : undefined"
-              class="tool-card card-modern hover-lift animate-scale-in"
+              class="tool-card card-modern hover-lift js-reveal"
               :class="{ 'tool-card-soon': tool.status !== 'available' }"
-              :style="{ animationDelay: (index * 0.1) + 's' }"
+              :data-reveal-index="index"
             >
               <div class="tool-icon" :class="tool.iconClass">
                 <i :class="tool.icon"></i>
@@ -153,17 +153,17 @@
       <img src="/images/shapes/process-one-map.png" alt="" class="process-bg-map" />
       <div class="container">
         <div class="text-center mb-5">
-          <div class="section-badge animate-fade-in">
+          <div class="section-badge js-reveal">
             <i class="bi bi-gear text-ocean"></i>
             <span>Quy trình đơn giản</span>
           </div>
-          <h2 class="section-title animate-slide-up">
+          <h2 class="section-title js-reveal">
             Xong tài liệu chỉ với <span class="text-gradient-primary">3 bước</span>
           </h2>
         </div>
 
         <div class="process-timeline">
-          <div class="process-step animate-scale-in" v-for="(step, index) in processSteps" :key="index" :style="{ animationDelay: (index * 0.3) + 's' }">
+          <div class="process-step js-reveal" v-for="(step, index) in processSteps" :key="index" :data-reveal-index="index">
             <div class="step-number" :class="step.colorClass">
               {{ index + 1 }}
             </div>
@@ -183,7 +183,7 @@
     <!-- CTA Section -->
     <section class="cta-section py-5">
       <div class="container">
-        <div class="cta-card card-glass">
+        <div class="cta-card card-glass js-reveal">
           <img src="/images/shapes/cta-one-shape-bg.png" alt="" class="cta-bg-shape" />
           <div class="row align-items-center">
             <div class="col-lg-8">
@@ -230,7 +230,8 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import anime from 'animejs'
 import { useMdToPdfConverter } from '@/composables/useApi'
 
 // LƯU Ý: đây chính là lỗi làm trang trắng — '@/utils/helpers' không tồn tại
@@ -249,6 +250,7 @@ function debounce(fn, wait = 300) {
 const demoContent = ref('# Xin chào từ DocForge\n\nGõ **Markdown** ở đây để xem PDF cập nhật ngay bên phải.')
 const demoPreviewUrl = ref('')
 const demoError = ref('')
+const demoPreviewEl = ref(null)
 
 const { Preview: previewDemo } = useMdToPdfConverter()
 
@@ -262,8 +264,21 @@ const runDemoPreview = debounce(async () => {
     if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
     demoPreviewUrl.value = url
     demoError.value = ''
+    // Nhấn nhẹ khung preview mỗi lần có bản mới, để người dùng biết là nó
+    // vừa cập nhật thật (realtime) chứ không phải đứng yên.
+    nextTick(() => {
+      if (demoPreviewEl.value) {
+        anime({
+          targets: demoPreviewEl.value,
+          scale: [0.97, 1],
+          duration: 420,
+          easing: 'easeOutBack'
+        })
+      }
+    })
   } catch (e) {
     demoError.value = e.message || 'Không tạo được bản xem trước'
+    console.error('[Home demo] preview lỗi:', e)
   }
 }, 600)
 
@@ -271,6 +286,70 @@ watch(demoContent, runDemoPreview, { immediate: true })
 
 onBeforeUnmount(() => {
   if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
+  if (revealObserver) revealObserver.disconnect()
+})
+
+// ----- Animation: hero vào trang theo timeline, các section dưới chỉ chạy
+// khi cuộn tới (không lãng phí animation lúc còn ngoài màn hình) -----
+let revealObserver = null
+
+function playHeroTimeline() {
+  const tl = anime.timeline({ easing: 'easeOutExpo' })
+  tl.add({
+    targets: '.js-hero-badge',
+    opacity: [0, 1],
+    translateY: [-12, 0],
+    duration: 600
+  })
+    .add({
+      targets: '.js-hero-title',
+      opacity: [0, 1],
+      translateY: [30, 0],
+      duration: 750,
+      delay: anime.stagger(120)
+    }, '-=300')
+    .add({
+      targets: '.js-hero-subtitle',
+      opacity: [0, 1],
+      translateY: [16, 0],
+      duration: 600
+    }, '-=400')
+    .add({
+      targets: '.js-hero-actions .btn',
+      opacity: [0, 1],
+      translateY: [16, 0],
+      duration: 500,
+      delay: anime.stagger(100)
+    }, '-=350')
+}
+
+function setupScrollReveal() {
+  const targets = document.querySelectorAll('.js-reveal')
+  revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return
+      const el = entry.target
+      const idx = Number(el.dataset.revealIndex || 0)
+      anime({
+        targets: el,
+        opacity: [0, 1],
+        translateY: [32, 0],
+        duration: 700,
+        delay: idx * 90,
+        easing: 'easeOutCubic'
+      })
+      revealObserver.unobserve(el)
+    })
+  }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' })
+
+  targets.forEach((el) => revealObserver.observe(el))
+}
+
+onMounted(() => {
+  playHeroTimeline()
+  // nextTick không đủ vì v-for render list card/step cần DOM đã có mặt
+  // đầy đủ; setTimeout 0 đảm bảo chạy sau khi Vue mount xong toàn bộ cây.
+  setTimeout(setupScrollReveal, 0)
 })
 
 // ----- Danh sách công cụ (hiện có + sắp ra mắt) -----
@@ -374,8 +453,13 @@ const processSteps = ref([
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.15;
+  opacity: 0.12;
   pointer-events: none;
+}
+
+[data-theme="dark"] .hero-pattern {
+  opacity: 0.2;
+  filter: invert(1);
 }
 
 .floating-elements {
@@ -388,13 +472,23 @@ const processSteps = ref([
 
 .floating-element {
   position: absolute;
-  opacity: 0.5;
+  opacity: 0.35;
+  animation: float-shape 6s ease-in-out infinite;
 }
 
-.element-1 { width: 140px; top: 12%; left: 5%; }
-.element-2 { width: 110px; top: 62%; left: 14%; }
-.element-3 { width: 160px; top: 15%; right: 8%; }
-.element-4 { width: 120px; bottom: 8%; right: 6%; }
+[data-theme="dark"] .floating-element {
+  opacity: 0.18;
+}
+
+@keyframes float-shape {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+.element-1 { width: 140px; top: 12%; left: 5%; animation-delay: 0s; }
+.element-2 { width: 110px; top: 62%; left: 14%; animation-delay: 1.5s; }
+.element-3 { width: 160px; top: 15%; right: 8%; animation-delay: 0.8s; }
+.element-4 { width: 120px; bottom: 8%; right: 6%; animation-delay: 2.2s; }
 
 .hero-content {
   position: relative;
@@ -414,6 +508,16 @@ const processSteps = ref([
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 1.5rem;
+}
+
+/* Trạng thái ẩn ban đầu cho các phần tử do anime.js điều khiển — tránh
+   nháy (flash) nội dung đầy đủ trước khi timeline/observer kịp chạy. */
+.js-hero-badge,
+.js-hero-title,
+.js-hero-subtitle,
+.js-hero-actions .btn,
+.js-reveal {
+  opacity: 0;
 }
 
 .hero-title {
@@ -469,6 +573,15 @@ const processSteps = ref([
   height: 320px;
   resize: vertical;
   font-family: var(--carrental-font-two, monospace);
+  /* Cố định sáng/tối cho editor để chữ + placeholder luôn đọc được dù đổi
+     theme trang — trước đây textarea đổi màu chữ theo dark mode nhưng nền
+     vẫn trắng nên phần hướng dẫn nhập gần như biến mất. */
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+.demo-textarea::placeholder {
+  color: #9aa0a6;
 }
 
 .demo-preview {
@@ -476,7 +589,7 @@ const processSteps = ref([
   border: 1px solid var(--carrental-bdr-color);
   border-radius: 12px;
   overflow: hidden;
-  background: var(--carrental-white);
+  background: #ffffff;
 }
 
 .demo-preview-frame {
