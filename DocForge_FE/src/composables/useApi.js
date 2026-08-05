@@ -165,6 +165,11 @@ export function useMdToPdfConverter() {
   /** Render preview PDF (inline) từ nội dung Markdown, trả về Object URL để nhúng iframe */
   const Preview = (mdContent, theme, pageSize) => {
     return execute(async () => {
+      console.log(`Sending request to ${PY_SERVICE_URL}/preview/md-to-pdf with data:`, {
+        contents: mdContent.substring(0, 30) + '...',
+        theme,
+        page_size: pageSize
+      })
       const res = await fetch(`${PY_SERVICE_URL}/preview/md-to-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,6 +200,14 @@ export function useMdToPdfConverter() {
       form.append('filename', filename || 'document')
       form.append('theme', theme)
       form.append('page_size', pageSize)
+
+      console.log(`Sending request to ${PY_SERVICE_URL}/convert/md-to-pdf with form data:`, {
+        filename: filename || 'document',
+        theme,
+        page_size: pageSize,
+        file: file ? file.name : null,
+        content: content ? content.substring(0, 30) + '...' : null
+      })
 
       const res = await fetch(`${PY_SERVICE_URL}/convert/md-to-pdf`, {
         method: 'POST',
