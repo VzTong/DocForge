@@ -193,6 +193,8 @@ export function useMdToPdfConverter() {
   /** Convert sang PDF rồi tự động tải về. Truyền `file` HOẶC `content`, không truyền cả hai. */
   const ConvertToPDF = (file, content, filename, theme, pageSize) => {
     return execute(async () => {
+      console.log("env =", import.meta.env);
+      console.log("url =", import.meta.env.VITE_PY_SERVICE_URL);
       const form = new FormData()
       if (file) form.append('file', file)
       else form.append('content', content) // cần BE hỗ trợ field này (xem ghi chú ở trên)
@@ -200,14 +202,6 @@ export function useMdToPdfConverter() {
       form.append('filename', filename || 'document')
       form.append('theme', theme)
       form.append('page_size', pageSize)
-
-      console.log(`Sending request to ${PY_SERVICE_URL}/convert/md-to-pdf with form data:`, {
-        filename: filename || 'document',
-        theme,
-        page_size: pageSize,
-        file: file ? file.name : null,
-        content: content ? content.substring(0, 30) + '...' : null
-      })
 
       const res = await fetch(`${PY_SERVICE_URL}/convert/md-to-pdf`, {
         method: 'POST',
