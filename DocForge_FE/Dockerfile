@@ -1,6 +1,9 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+ARG VITE_PY_SERVICE_URL
+ENV VITE_PY_SERVICE_URL=$VITE_PY_SERVICE_URL
+
 WORKDIR /app
 
 # Copy package files
@@ -12,6 +15,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
+
+RUN echo "API: $VITE_PY_SERVICE_URL"
 # Build the application
 RUN npm run build
 
