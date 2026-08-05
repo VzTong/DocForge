@@ -164,7 +164,6 @@ class MarkdownToPdfConverter(BaseConverter):
         except OSError as e:
             raise ConversionError(f"WeasyPrint import failed: {e}") from e
 
-        print(f"Converting Markdown to PDF using theme '{options.get('theme', self.theme.name)}'...")
         out_dir.mkdir(parents=True, exist_ok=True)
         filename = options.get("filename", "output")
         pdf_path = out_dir / f"{filename}.pdf"

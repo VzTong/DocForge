@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
 from app.core.config import settings
+from app.core.exception_handler import register_exception_handlers
 
 app = FastAPI(
         title=settings.app_name,
@@ -21,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Đăng ký global exception handlers
+register_exception_handlers(app)
 
 app.include_router(api_router)
 

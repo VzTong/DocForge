@@ -2,6 +2,9 @@ import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-icons/font/bootstrap-icons.min.css";
 import '@fortawesome/fontawesome-free/css/all.css';
 
+// Import error handler utility
+import { setupGlobalErrorHandler } from "./utils/errorHandler.js";
+
 // Simple filter for extension errors - đơn giản và không can thiệp
 const originalError = console.error;
 console.error = function(...args) {
@@ -65,7 +68,21 @@ const pinia = createPinia();
 const themeManager = new ThemeManager();
 window.themeManager = themeManager; // Make it globally accessible
 
-createApp(App)
-.use(router)
+const app = createApp(App);
+
+// Setup global error handler
+setupGlobalErrorHandler();
+
+// Vue global error handler
+app.config.errorHandler = (error, instance, info) => {
+  console.error("Vue Global Error:", {
+    error,
+    component: instance?.vnode?.type?.name || "Unknown",
+    info,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+app.use(router)
 .use(pinia)
 .mount("#app");
