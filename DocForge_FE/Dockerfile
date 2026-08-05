@@ -15,18 +15,19 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM nginx:stable-alpine
+# Production stage - Static file server for Render
+FROM node:20-alpine AS runner
 
-# Remove default nginx website
-RUN rm -rf /usr/share/nginx/html/*
+WORKDIR /app
 
 # Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist ./dist
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install serve for static file serving
+RUN npm install -g serve
 
-EXPOSE 80
+# Expose port (Render uses PORT env var)
+EXPOSE $PORT
 
-CMD ["nginx", "-g", "daemon off;"]
+# Serve static files
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:$PORT"]
