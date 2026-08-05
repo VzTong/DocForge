@@ -57,7 +57,9 @@ class MarkdownPreviewRequest(BaseModel):
 
 @router.post("/convert/md-to-pdf", summary="Convert file using specified converter", tags=["md-to-pdf"])
 async def md_to_pdf(
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    content: Optional[str] = Form(None),
+    filename: Optional[str] = Form(None),
     theme: Optional[str] = Form(MarkdownThemeOptions.DOCUMENT.value),
     title: Optional[str] = Form(None),
     subtitle: Optional[str] = Form(None),
@@ -66,18 +68,27 @@ async def md_to_pdf(
     links: Optional[str] = Form(None),
     page_size: Optional[str] = Form(PageSize.A4.value),
 ) -> FileResponse:
-    """Nhận file .md và trả về file .pdf."""
+    """Nhận file .md hoặc nội dung text và trả về file .pdf."""
     converter = get_converter(MarkdownToPdfConverter.name)
     if converter is None:
         raise HTTPException(status_code=500, detail="Unregistered converter")
 
-    if not (file.filename or "").lower().endswith((".md", ".markdown")):
-        raise HTTPException(status_code=400, detail="Only accepts .md/.markdown files.")
-
-    job_dir = settings.work_dir / uuid.uuid4().hex
-    try:
+    # Xác định nguồn nội dung: file upload hoặc text thuần
+    if file:
+        if not (file.filename or "").lower().endswith((".md", ".markdown")):
+            raise HTTPException(status_code=400, detail="Only accepts .md/.markdown files.")
+        job_dir = settings.work_dir / uuid.uuid4().hex
         input_path = _save_uploaded_file(file, job_dir)
         md_text = input_path.read_text(encoding="utf-8")
+    elif content:
+        if not content.strip():
+            raise HTTPException(status_code=400, detail="Content is empty.")
+        job_dir = settings.work_dir / uuid.uuid4().hex
+        md_text = content
+    else:
+        raise HTTPException(status_code=400, detail="Either 'file' or 'content' is required.")
+
+    try:
         extracted_title, extracted_subtitle, extracted_contact, extracted_address, extracted_links, md_body = split_document_header(md_text)
 
         # Truyền các tùy chọn render vào converter
@@ -89,6 +100,7 @@ async def md_to_pdf(
             "address": address or extracted_address,
             "links": links or extracted_links,
             "page_size": page_size,
+            "filename": filename or "output",
         }
         pdf_path = converter.convert_from_text(md_body, job_dir / "out", **options)
         return FileResponse(
