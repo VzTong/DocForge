@@ -339,7 +339,7 @@ async function handleDownload() {
 
 .md-editor {
   width: 100%;
-  height: 480px;
+  height: 515x;
   resize: vertical;
   padding: 16px;
   border-radius: 12px;
