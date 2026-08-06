@@ -22,7 +22,7 @@
 
           <!-- Welcome Message -->
           <div class="welcome-text d-none d-md-block">
-            <span class="text-gradient-ocean">Chào mừng đến với DocForge</span>
+            <span class="text-gradient-ocean">Chào mừng đến với Forge Doc</span>
           </div>
 
           <!-- Top Right Actions -->
