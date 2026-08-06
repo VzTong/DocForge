@@ -40,54 +40,6 @@ from app.converters.markdown.meta import (
     split_document_header,
 )
 
-_COMPLEX_HEADER_RE = re.compile(
-    r"<(?:div|table|thead|tbody|tr|td|th|section|header|ul|ol|li|img|svg|i\b|span\s[^>]*class)",
-    re.IGNORECASE,
-)
-
-
-def _is_simple_cv_header(md_text: str) -> bool:
-    """True chỉ khi header CV dạng đơn giản (H1 + vài dòng text ngắn)."""
-    lines = md_text.splitlines()
-    non_empty: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("<!--"):
-            continue
-        non_empty.append(stripped)
-        if len(non_empty) >= 12:
-            break
-
-    if not non_empty:
-        return False
-
-    if not non_empty[0].startswith("# "):
-        return False
-
-    header_candidates = []
-    for line in non_empty[1:]:
-        if line.startswith("---"):
-            break
-        if line.startswith("#"):
-            break
-        header_candidates.append(line)
-
-    if len(header_candidates) > 6:
-        return False
-
-    for line in header_candidates:
-        if _COMPLEX_HEADER_RE.search(line):
-            return False
-        if line.startswith("|") or re.match(r"^\s*\|?\s*[-:]+", line):
-            return False
-        if line.startswith("```"):
-            return False
-        if len(line) > 120:
-            return False
-
-    return True
-
-
 class MarkdownToPdfConverter(BaseConverter):
     """Convert a Markdown document into PDF."""
 
@@ -127,7 +79,7 @@ class MarkdownToPdfConverter(BaseConverter):
         if theme_name != self.theme.name:
             renderer = MarkdownTheme(theme_name)
 
-        if theme_name == "cv" and _is_simple_cv_header(md_text):
+        if theme_name == "cv":
             (
                 extracted_title,
                 extracted_subtitle,
