@@ -20,15 +20,18 @@ from app.core.config import settings
 
 router = APIRouter()
 
+
 @router.get("/health", summary="Health check endpoint")
 async def health_check() -> dict:
     """Health check endpoint. Trả về 200 OK nếu service đang chạy."""
     return {"status": "ok"}
 
+
 @router.get("/converters", summary="List available converters")
 async def list_converters() -> dict:
     """Liệt kê các converter có sẵn."""
     return {"available_converters": available()}
+
 
 def _save_uploaded_file(upload_file: UploadFile, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -44,6 +47,7 @@ def _save_uploaded_file(upload_file: UploadFile, out_dir: Path) -> Path:
             f.write(chunk)
     return dest
 
+
 class MarkdownPreviewRequest(BaseModel):
     """Request body cho endpoint preview (không cần upload file)."""
     contents: str
@@ -54,6 +58,7 @@ class MarkdownPreviewRequest(BaseModel):
     address: Optional[str] = None
     links: Optional[str] = None
     page_size: Optional[str] = PageSize.A4.value
+
 
 @router.post("/convert/md-to-pdf", summary="Convert file using specified converter", tags=["md-to-pdf"])
 async def md_to_pdf(
@@ -89,7 +94,10 @@ async def md_to_pdf(
         raise HTTPException(status_code=400, detail="Either 'file' or 'content' is required.")
 
     try:
-        extracted_title, extracted_subtitle, extracted_contact, extracted_address, extracted_links, md_body = split_document_header(md_text)
+        # Chỉ trích metadata cho options — KHÔNG cắt body
+        extracted_title, extracted_subtitle, extracted_contact, extracted_address, extracted_links, _ = (
+            split_document_header(md_text)
+        )
 
         # Truyền các tùy chọn render vào converter
         options = {
@@ -102,15 +110,15 @@ async def md_to_pdf(
             "page_size": page_size,
             "filename": filename or "output",
         }
-        pdf_path = converter.convert_from_text(md_body, job_dir / "out", **options)
+        # FULL text
+        pdf_path = converter.convert_from_text(md_text, job_dir / "out", **options)
         return FileResponse(
             path=pdf_path,
             media_type="application/pdf",
-            filename=pdf_path.name
+            filename=pdf_path.name,
         )
     except ConversionError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
-    # Dọn job_dir: để backgroundTask/scheduler ở phase sau (tránh xóa trước khi strem xong)
 
 
 @router.post("/preview/md-to-pdf", summary="Preview PDF from raw markdown text", tags=["md-to-pdf"])
@@ -124,8 +132,10 @@ async def preview_md_to_pdf(request: MarkdownPreviewRequest) -> FileResponse:
 
     job_dir = settings.work_dir / uuid.uuid4().hex
     try:
-        # Tách metadata ở đầu tài liệu ra khỏi body để tránh bị render lặp.
-        extracted_title, extracted_subtitle, extracted_contact, extracted_address, extracted_links, md_text = split_document_header(request.contents)
+        # Chỉ trích metadata cho options — KHÔNG cắt body
+        extracted_title, extracted_subtitle, extracted_contact, extracted_address, extracted_links, _ = (
+            split_document_header(request.contents)
+        )
 
         data = request.model_dump()
         data.pop("contents")
@@ -145,7 +155,8 @@ async def preview_md_to_pdf(request: MarkdownPreviewRequest) -> FileResponse:
         if data.get("page_size") in (None, ""):
             data["page_size"] = request.page_size
 
-        pdf_path = converter.convert_from_text(md_text, job_dir / "out", **data)
+        # FULL text
+        pdf_path = converter.convert_from_text(request.contents, job_dir / "out", **data)
         return FileResponse(
             path=pdf_path,
             media_type="application/pdf",

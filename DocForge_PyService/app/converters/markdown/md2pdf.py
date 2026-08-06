@@ -23,18 +23,6 @@ Notes:
 - WeasyPrint requires several native libraries (Pango, Cairo, GDK-PixBuf, libffi, ...).
 - On Windows: install GTK3 Runtime.
 - On Linux/Docker: install the required system packages before running.
----
-Thiết kế:
-- Việc phân tích cú pháp Markdown được thực hiện bởi gói `markdown`.
-- Việc kết xuất (render) HTML được giao cho `MarkdownTheme`.
-- Việc tạo PDF được giao cho WeasyPrint.
-- Giao diện (HTML/CSS) được tách biệt hoàn toàn khỏi bộ chuyển đổi, nhờ đó có thể
-  thêm giao diện mới mà không cần sửa đổi tệp này.
-
-Lưu ý:
-- WeasyPrint yêu cầu một số thư viện hệ thống (Pango, Cairo, GDK-PixBuf, libffi, ...).
-- Trên Windows: cài đặt GTK3 Runtime.
-- Trên Linux/Docker: cài đặt các gói hệ thống cần thiết trước khi chạy.
 """
 
 from __future__ import annotations
@@ -47,24 +35,61 @@ import re
 
 from app.converters.base import BaseConverter, ConversionError
 from app.converters.markdown.ThemeRender import MarkdownTheme
+from app.converters.markdown.meta import (
+    extract_title_subtitle,
+    split_document_header,
+)
+
+_COMPLEX_HEADER_RE = re.compile(
+    r"<(?:div|table|thead|tbody|tr|td|th|section|header|ul|ol|li|img|svg|i\b|span\s[^>]*class)",
+    re.IGNORECASE,
+)
+
+
+def _is_simple_cv_header(md_text: str) -> bool:
+    """True chỉ khi header CV dạng đơn giản (H1 + vài dòng text ngắn)."""
+    lines = md_text.splitlines()
+    non_empty: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("<!--"):
+            continue
+        non_empty.append(stripped)
+        if len(non_empty) >= 12:
+            break
+
+    if not non_empty:
+        return False
+
+    if not non_empty[0].startswith("# "):
+        return False
+
+    header_candidates = []
+    for line in non_empty[1:]:
+        if line.startswith("---"):
+            break
+        if line.startswith("#"):
+            break
+        header_candidates.append(line)
+
+    if len(header_candidates) > 6:
+        return False
+
+    for line in header_candidates:
+        if _COMPLEX_HEADER_RE.search(line):
+            return False
+        if line.startswith("|") or re.match(r"^\s*\|?\s*[-:]+", line):
+            return False
+        if line.startswith("```"):
+            return False
+        if len(line) > 120:
+            return False
+
+    return True
+
 
 class MarkdownToPdfConverter(BaseConverter):
-    """
-    Convert a Markdown document into PDF.
-
-    Responsibilities:
-        1. Read Markdown source.
-        2. Convert Markdown -> HTML.
-        3. Apply selected HTML/CSS theme.
-        4. Generate PDF using WeasyPrint.
-
-    This class intentionally knows nothing about:
-        - HTML template structure.
-        - CSS styling.
-        - Theme loading.
-
-    Those responsibilities belong to `MarkdownTheme`.
-    """
+    """Convert a Markdown document into PDF."""
 
     name = "md-to-pdf"
 
@@ -77,33 +102,6 @@ class MarkdownToPdfConverter(BaseConverter):
         address: str = "",
         links: str = "",
     ) -> None:
-        """
-        Initialize the Markdown converter.
-
-        Args:
-            theme:
-                Name of the rendering theme.
-                Example: "modern", "github", "cv".
-
-            title:
-                HTML document title.  For the CV theme this is
-                typically the person's name.
-
-            subtitle:
-                Optional subtitle (e.g. job title).  Used by the
-                CV theme template.
-
-            contact:
-                Optional contact info (e.g. email / phone).
-                Used by the CV theme template.
-
-            address:
-                Optional address line shown below contact.
-
-            links:
-                Optional profile links line shown below address.
-        """
-
         self.theme = MarkdownTheme(theme)
         self.title = title
         self.subtitle = subtitle
@@ -113,9 +111,9 @@ class MarkdownToPdfConverter(BaseConverter):
 
     def _render_html(self, md_text: str, **options: Any) -> str:
         """
-        Convert Markdown into a complete HTML document.
+        - cv + header đơn giản → tách header vào template CV
+        - cv + header phức tạp / document / github → giữ nguyên full Markdown
         """
-        # Cho phép options đè lên các giá trị khởi tạo
         theme_name = options.get("theme", self.theme.name)
         title = options.get("title", self.title)
         subtitle = options.get("subtitle", self.subtitle)
@@ -129,8 +127,29 @@ class MarkdownToPdfConverter(BaseConverter):
         if theme_name != self.theme.name:
             renderer = MarkdownTheme(theme_name)
 
+        if theme_name == "cv" and _is_simple_cv_header(md_text):
+            (
+                extracted_title,
+                extracted_subtitle,
+                extracted_contact,
+                extracted_address,
+                extracted_links,
+                body_md,
+            ) = split_document_header(md_text)
+
+            title = title or extracted_title or ""
+            subtitle = subtitle or extracted_subtitle or ""
+            contact = contact or extracted_contact or ""
+            address = address or extracted_address or ""
+            links = links or extracted_links or ""
+        else:
+            body_md = md_text
+            if not title:
+                extracted_title, _ = extract_title_subtitle(md_text)
+                title = extracted_title or ""
+
         body = markdown.markdown(
-            md_text,
+            body_md,
             extensions=[
                 "tables",
                 "fenced_code",

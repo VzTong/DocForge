@@ -51,11 +51,23 @@
               <div class="preview-pane" ref="previewPaneEl">
                 <div class="preview-pane-label">
                   <i class="bi bi-eye"></i> Xem trước
+                  <span v-if="previewLoading" class="preview-loading-hint">Đang tạo…</span>
                 </div>
-                <iframe v-if="previewUrl" :src="previewUrl" class="preview-frame" title="Xem trước PDF"></iframe>
-                <div v-else class="preview-placeholder">
-                  <i class="bi bi-file-earmark-pdf"></i>
-                  <span>{{ previewError || 'Bản xem trước sẽ hiện ở đây' }}</span>
+                <div class="preview-frame-wrap">
+                  <iframe
+                    v-if="previewUrl"
+                    :src="previewUrl"
+                    class="preview-frame"
+                    title="Xem trước PDF"
+                  ></iframe>
+                  <div v-else class="preview-placeholder">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    <span>{{ previewError || 'Bản xem trước sẽ hiện ở đây' }}</span>
+                  </div>
+                  <div v-if="previewLoading" class="preview-overlay">
+                    <span class="preview-overlay-spinner"></span>
+                    Đang tạo preview…
+                  </div>
                 </div>
               </div>
             </div>
@@ -133,6 +145,7 @@ const theme = ref('document')
 const pageSize = ref('A4')
 const previewUrl = ref('')
 const previewError = ref('')
+const previewLoading = ref(false)
 const downloadError = ref('')
 const loadedFileName = ref('')
 const fileInputRef = ref(null)
@@ -148,31 +161,39 @@ fetchOptions().then((opts) => {
   if (opts.pageSizes[0]) pageSize.value = opts.pageSizes[0].value
 })
 
-// ----- Gợi ý tên file từ dòng "# Tiêu đề" đầu tiên (client-side, đơn giản) -----
-// Lưu ý: PyService (app/converters/markdown/meta.py -> suggest_output_filename)
-// đã có logic gợi ý tên file đầy đủ hơn (rút gọn chức danh, bỏ dấu...). Lý tưởng
-// nhất là route.py trả tên gợi ý này qua header Content-Disposition khi convert,
-// và đoạn xử lý response bên dưới đã sẵn sàng đọc header đó nếu có — hàm này chỉ
-// là fallback hiển thị tạm trong lúc chưa có.
+// Gợi ý tên file từ dòng "# Tiêu đề" đầu tiên
 const suggestedFilename = computed(() => {
   const match = content.value.match(/^#\s+(.+)$/m)
   if (!match) return 'document'
   return match[1].trim().replace(/\s+/g, '-').toLowerCase().slice(0, 60) || 'document'
 })
 
-// ----- Xem trước realtime (giống trang chủ) -----
+// ----- Xem trước realtime -----
+// Debounce 350ms (trước 600ms) cho cảm giác gần realtime hơn
+let previewSeq = 0
+
 const runPreview = debounce(async () => {
   if (!content.value.trim()) {
     previewError.value = ''
+    previewLoading.value = false
     return
   }
+
+  const seq = ++previewSeq
+  previewLoading.value = true
+  previewError.value = ''
+
   try {
     const url = await Preview(content.value, theme.value, pageSize.value)
+    // Bỏ qua kết quả cũ nếu đã có request mới hơn
+    if (seq !== previewSeq) {
+      URL.revokeObjectURL(url)
+      return
+    }
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = url
     previewError.value = ''
-    // Nhấn nhẹ khung preview mỗi lần có bản mới để thấy rõ nó vừa cập nhật
-    // (giống hiệu ứng ở demo trang chủ).
+
     nextTick(() => {
       if (previewPaneEl.value) {
         anime({
@@ -184,30 +205,41 @@ const runPreview = debounce(async () => {
       }
     })
   } catch (e) {
+    if (seq !== previewSeq) return
     previewError.value = e.message || 'Không tạo được bản xem trước'
     console.error('[ConvertPage] preview lỗi:', e)
+  } finally {
+    if (seq === previewSeq) {
+      previewLoading.value = false
+    }
   }
-}, 600)
+}, 350)
 
 watch([content, theme, pageSize], runPreview, { immediate: true })
 
 onMounted(() => {
   anime.timeline({ easing: 'easeOutExpo' })
-    .add({ targets: '.js-header', opacity: [0, 1], translateY: [24, 0], duration: 650, delay: anime.stagger(120) })
+    .add({
+      targets: '.js-header',
+      opacity: [0, 1],
+      translateY: [24, 0],
+      duration: 650,
+      delay: anime.stagger(120)
+    })
 })
 
 onBeforeUnmount(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
 
-// ----- Tải file .md lên -> đổ nội dung vào editor để xem trước & sửa tiếp -----
+// ----- Tải file .md -----
 function triggerFilePicker() {
   fileInputRef.value?.click()
 }
 
 function onFileSelected(e) {
   const file = e.target.files?.[0]
-  e.target.value = '' // cho phép chọn lại đúng file đó lần sau
+  e.target.value = ''
   if (!file) return
 
   const reader = new FileReader()
@@ -228,7 +260,13 @@ async function handleDownload() {
   if (!content.value.trim()) return
   downloadError.value = ''
   try {
-    await ConvertToPDF(null, content.value, filename.value || suggestedFilename.value, theme.value, pageSize.value)
+    await ConvertToPDF(
+      null,
+      content.value,
+      filename.value || suggestedFilename.value,
+      theme.value,
+      pageSize.value
+    )
   } catch (e) {
     downloadError.value = e.message || 'Tạo PDF thất bại'
     console.error('[ConvertPage] convert lỗi:', e)
@@ -336,6 +374,18 @@ async function handleDownload() {
   margin-bottom: 8px;
 }
 
+.preview-loading-hint {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--carrental-gray);
+  margin-left: 4px;
+}
+
+.preview-frame-wrap {
+  position: relative;
+  flex: 1;
+}
+
 .preview-frame {
   width: 100%;
   height: 480px;
@@ -362,6 +412,30 @@ async function handleDownload() {
 .preview-placeholder i {
   font-size: 2rem;
   opacity: 0.5;
+}
+
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  font-weight: 600;
+  color: var(--carrental-black);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.preview-overlay-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--carrental-ocean, #1e40af);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 .options-row {

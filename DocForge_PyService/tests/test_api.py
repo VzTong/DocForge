@@ -6,7 +6,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.converters.markdown.md2pdf import MarkdownToPdfConverter
+from app.converters.markdown.md2pdf import (
+    MarkdownToPdfConverter,
+    _is_simple_cv_header,
+)
 from app.converters.markdown.meta import split_document_header
 from app.main import app
 
@@ -22,6 +25,28 @@ SAMPLE_CV_MD_PATH = Path(__file__).parent / "fixtures" / "samplecv.md"
 
 SAMPLE_CV_MD = SAMPLE_CV_MD_PATH.read_text(encoding="utf-8")
 
+# Báo cáo có metadata lines trước --- (dùng để test document/github giữ nguyên header)
+SAMPLE_DOC_MD = Path(__file__).parent / "fixtures" / "sampledoc.md"
+
+# Header CV phức tạp (HTML layout / icon) → không được tách
+SAMPLE_COMPLEX_CV_MD = """# Fullname
+
+<div class="cv-header-grid">
+  <div class="left">
+    <strong>.NET Backend Developer (Fresher)</strong>
+  </div>
+  <div class="right">
+    <span class="icon">🌐</span> name.id.vn<br>
+    <span class="icon">✉</span> name@gmail.com
+  </div>
+</div>
+
+---
+
+## Kinh nghiệm
+- Công ty A
+"""
+
 
 def test_health():
     """Test health endpoint."""
@@ -29,6 +54,7 @@ def test_health():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
+
 
 def test_list_converters():
     """Test listing available converters."""
@@ -38,6 +64,7 @@ def test_list_converters():
     assert "available_converters" in data
     assert MarkdownToPdfConverter.name in data["available_converters"]
 
+
 def test_render_html_keeps_table_and_code_block():
     """Test render HTML giữ nguyên table và code block."""
     converter = MarkdownToPdfConverter()
@@ -46,7 +73,8 @@ def test_render_html_keeps_table_and_code_block():
     assert "<table>" in html_content
     assert "<th>Kỹ năng</th>" in html_content
     # Kiểm tra code block
-    assert "<pre><code class=\"language-python\">" in html_content
+    assert '<pre><code class="language-python">' in html_content
+
 
 def test_convert_reject_wrong_filetype():
     """Test convert từ file không phải Markdown."""
@@ -55,6 +83,7 @@ def test_convert_reject_wrong_filetype():
         files={"file": ("test.exe", b"bad", "application/octet-stream")},
     )
     assert response.status_code == 400
+
 
 def test_convert_md_return_pdf_or_442():
     """Nếu WeasyPrint + lib hệ thống đầy đủ -> 200 PDF, nếu thiếu lib hệ thống -> 422 (WeasyPrint error)"""
@@ -74,36 +103,12 @@ def test_render_document_theme_supports_page_size_option():
 
     assert "size: Letter;" in html
 
-# def test_debug_show_html():
-#     """Test tạm để nhìn HTML render ra - mở file bằng trình duyệt."""
-
-#     # html = MarkdownToPdfConverter()._render_html(SAMPLE_MD)
-#     # Lấy đường dẫn tuyệt đối của file hiện tại
-#     current_dir = Path(__file__).parent
-
-#     # Tạo đường dẫn đến file sample.md
-#     sample_md_path = current_dir / "fixtures" / "sample.md"
-
-#     # Đọc nội dung file
-#     with open(sample_md_path, "r", encoding="utf-8") as f:
-#         md_content = f.read()#     # Truyền vào converter
-#     html = MarkdownToPdfConverter()._render_html(md_content)
-
-#     # Thư mục fixtures nằm cùng cấp với test_api.py
-#     fixtures_dir = Path(__file__).parent / "fixtures"
-#     fixtures_dir.mkdir(exist_ok=True)
-
-#     output_file = fixtures_dir / "debug_output.html"
-#     output_file.write_text(html, encoding="utf-8")
-
-#     print(f"\n=== Đã ghi HTML vào: {output_file.resolve()} ===")
-#     print(html[:300])  # In 300 ký tự đầu
 
 def _read_md() -> str:
-    # Đọc nội dung file
     with open(SAMPLE_MD_PATH, "r", encoding="utf-8") as f:
         md_content = f.read()
     return md_content
+
 
 def _write_debug_html(theme: str, html: str) -> Path:
     fixtures_dir = Path(__file__).parent / "fixtures"
@@ -154,13 +159,12 @@ def test_render_cv_theme():
 
 
 def test_cv_theme_render_html():
-    """Test CV theme render HTML có header (tên, chức danh, contact) và body."""
-    converter = MarkdownToPdfConverter(
-        theme="cv",
-        title="Nguyễn Văn A",
-        subtitle="Backend Developer",
-        contact="email@example.com  |  0909 123 456",
-    )
+    """Test CV theme render HTML có header (tên, chức danh, contact) và body.
+
+    Khi không truyền subtitle/contact qua options, converter tự trích từ
+    Markdown (samplecv có **Backend Developer** → ra <strong>).
+    """
+    converter = MarkdownToPdfConverter(theme="cv")
     html = converter._render_html(SAMPLE_CV_MD)
 
     assert "<h1>Nguyễn Văn A</h1>" in html
@@ -169,11 +173,11 @@ def test_cv_theme_render_html():
     assert "0909 123 456" in html
     assert 'href="https://linkedin.com/in/nguyenvana"' in html
     assert "<hr>" not in html
-    assert "<main class=\"cv-body\">" in html
+    assert '<main class="cv-body">' in html
 
 
 def test_cv_theme_has_css_classes():
-    """Test CV theme CSS chứa các class cần thiết."""
+    """Test CV theme CSS có các class cần thiết."""
     converter = MarkdownToPdfConverter(theme="cv")
     html = converter._render_html("# Test\n\nSome text.")
 
@@ -221,3 +225,85 @@ def test_split_document_header_extracts_address_and_links():
     assert address == "📍 TP. Hồ Chí Minh, Việt Nam"
     assert links == "[LinkedIn](https://linkedin.com/in/nguyenvana) | [GitHub](https://github.com/nguyenvana)"
     assert "Tóm tắt nghề nghiệp" in body
+
+
+# ---------------------------------------------------------------------------
+# Header handling: document / github giữ nguyên; CV simple tách; CV complex không tách
+# ---------------------------------------------------------------------------
+
+def test_is_simple_cv_header_recognizes_samplecv():
+    """samplecv.md là header đơn giản → được nhận diện để tách."""
+    assert _is_simple_cv_header(SAMPLE_CV_MD) is True
+
+
+def test_is_simple_cv_header_rejects_complex_html():
+    """Header có div/span class (layout/icon) → coi là phức tạp, không tách."""
+    assert _is_simple_cv_header(SAMPLE_COMPLEX_CV_MD) is False
+
+
+def test_is_simple_cv_header_document_style_is_simple():
+    """Báo cáo metadata lines (không HTML layout) vẫn được heuristic coi là simple.
+    Việc không tách khi dùng theme document là do theme != cv, không phải heuristic.
+    """
+    assert _is_simple_cv_header(SAMPLE_DOC_MD) is True
+
+
+def test_document_theme_keeps_metadata_lines():
+    """Theme document phải giữ nguyên H1 + dòng metadata trước ---."""
+    converter = MarkdownToPdfConverter(theme="document")
+    html = converter._render_html(SAMPLE_DOC_MD)
+
+    assert "Báo cáo Dự án" in html
+    assert "Tên dự án" in html
+    assert "Hệ thống Quản lý Kho hàng" in html
+    assert "03/08/2026" in html
+    assert "Nguyễn Văn A" in html
+    assert "Tóm tắt" in html
+
+
+def test_github_theme_keeps_metadata_lines():
+    """Theme github phải giữ nguyên H1 + dòng metadata trước ---."""
+    converter = MarkdownToPdfConverter(theme="github")
+    html = converter._render_html(SAMPLE_DOC_MD)
+
+    assert "Báo cáo Dự án" in html
+    assert "Tên dự án" in html
+    assert "Hệ thống Quản lý Kho hàng" in html
+    assert "Tóm tắt" in html
+
+
+def test_cv_theme_simple_header_is_split():
+    """CV + header đơn giản (samplecv) → header đưa lên template, body không lặp metadata."""
+    converter = MarkdownToPdfConverter(theme="cv")
+    html = converter._render_html(SAMPLE_CV_MD)
+
+    # Header nằm trong vùng cv-header
+    assert "<h1>Nguyễn Văn A</h1>" in html
+    assert "Backend Developer" in html
+    assert "email@example.com" in html
+    assert "TP. Hồ Chí Minh" in html
+    assert "linkedin.com/in/nguyenvana" in html
+
+    # Body bắt đầu từ section
+    assert "Tóm tắt nghề nghiệp" in html
+
+    body_start = html.find('<main class="cv-body">')
+    assert body_start != -1
+    body_html = html[body_start:]
+    # Tên không còn trong body (đã tách lên header)
+    assert "Nguyễn Văn A" not in body_html
+
+
+def test_cv_theme_complex_header_is_kept_in_body():
+    """CV + header phức tạp (HTML layout) → không tách, toàn bộ nằm trong body."""
+    converter = MarkdownToPdfConverter(theme="cv")
+    html = converter._render_html(SAMPLE_COMPLEX_CV_MD)
+
+    # Nội dung custom header vẫn còn trong output
+    assert "cv-header-grid" in html
+    assert ".NET Backend Developer" in html
+    assert "name@gmail.com" in html
+    assert "Kinh nghiệm" in html
+
+    # Title vẫn được trích cho <title> / h1 template
+    assert "<h1>Fullname</h1>" in html
