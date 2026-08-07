@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from app.converters.base import BaseConverter
 from app.converters.markdown.md2pdf import MarkdownToPdfConverter
+from app.converters.pdf.converter import PdfToDocxConverter
 
 _CONVERTER_REGISTRY: dict[str, BaseConverter] = {
     c.name: c() for c in (
         MarkdownToPdfConverter,
+        PdfToDocxConverter,
     )
     # MarkdownToPdfConverter.name: MarkdownToPdfConverter()
     # TODO phase sau:

@@ -14,11 +14,14 @@ from app.converters.base import ConversionError
 from app.converters.common import PageSize
 from app.converters.markdown.md2pdf import MarkdownToPdfConverter
 from app.converters.markdown.options import MarkdownThemeOptions
+from app.converters.pdf.converter import PdfToDocxConverter
 from app.converters.markdown.meta import split_document_header
 from app.converters.registry import get_converter, available
 from app.core.config import settings
 
 router = APIRouter()
+
+DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
 @router.get("/health", summary="Health check endpoint")
@@ -162,6 +165,75 @@ async def preview_md_to_pdf(request: MarkdownPreviewRequest) -> FileResponse:
             media_type="application/pdf",
             filename=pdf_path.name,
             content_disposition_type="inline",
+        )
+    except ConversionError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    
+
+def _save_uploaded_file(upload_file: UploadFile, out_dir: Path) -> Path:
+    """Lưu file upload vào thư mục tạm thời và trả về Path tới file đó. Kiểm tra kích thước file."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dest = out_dir / (upload_file.filename or f"input_{uuid.uuid4().hex}")
+    size = 0
+    with dest.open("wb") as f:
+        while chunk := upload_file.file.read(1024 * 1024):  # 1MB chunk
+            size += len(chunk)
+            if size > settings.max_file_size:
+                f.close()
+                shutil.rmtree(out_dir, ignore_errors=True)  # Clean up the directory
+                raise HTTPException(status_code=413, detail="File too large")
+            f.write(chunk)
+    return dest
+
+@router.post(
+    "/convert/pdf-to-docx",
+    summary="Convert PDF to DOCX",
+    tags=["pdf-to-docx"],
+    response_class=FileResponse,
+    responses={
+        400: {"description": "Bad Request"},
+        413: {"description": "File too large"},
+        422: {"description": "Conversion Error"},
+    },
+)
+def pdf_to_docx(
+    file: UploadFile = File(..., description="PDF file to convert"),
+    start_page: Optional[str] = Form(None, description="Start page (0-indexed)"),
+    end_page: Optional[str] = Form(None, description="End page (exclusive)"),
+) -> FileResponse:
+    """Chuyển PDF sang Word, giữ layout và định dạng. Trả về file .docx."""
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only accepts .pdf files.")
+
+    # Xử lý chuỗi rỗng → None
+    def _parse_page(value: Optional[str]) -> Optional[int]:
+        if value is None or str(value).strip() == "":
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f"Invalid page number: '{value}'")
+
+    start = _parse_page(start_page)
+    end = _parse_page(end_page)
+
+    converter = get_converter(PdfToDocxConverter.name)
+    if converter is None:
+        raise HTTPException(status_code=500, detail="Unregistered converter")
+
+    job_dir = settings.work_dir / uuid.uuid4().hex
+    try:
+        input_path = _save_uploaded_file(file, job_dir)
+        output_path = converter.convert(
+            input_file=input_path,
+            output_file=job_dir / "out",
+            start_page=start,
+            end_page=end,
+        )
+        return FileResponse(
+            path=output_path,
+            media_type=DOCX_MEDIA_TYPE,
+            filename=output_path.name,
         )
     except ConversionError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
