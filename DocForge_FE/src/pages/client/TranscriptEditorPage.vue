@@ -1,245 +1,271 @@
 <template>
-  <div class="convert-page py-5">
+  <div class="tx-page py-5">
     <div class="container">
       <Breadcrumb :items="[
         { label: 'Trang chủ', to: '/', icon: 'bi bi-house' },
         { label: 'Công cụ', to: '/#cong-cu' },
-        { label: 'Audio → Transcript Editor' }
+        { label: 'Âm thanh → Transcript' }
       ]" />
 
-      <div class="text-center mb-5">
+      <div class="text-center mb-4">
         <div class="section-badge js-header">
-          <i class="bi bi-file-earmark-text text-ocean"></i>
-          <span>DocForge</span>
+          <i class="bi bi-mic-fill text-ocean"></i>
+          <span>Audio → Text</span>
         </div>
         <h2 class="section-title js-header">
-          <span class="text-gradient-primary">Audio</span>
-          sang <span class="text-gradient-ocean">Transcript Editor</span>
+          <span class="text-gradient-primary">Transcript</span>
+          <span> Editor</span>
         </h2>
         <p class="section-subtitle js-header">
-          Tải audio lên, chọn gợi ý (hint) để cải thiện độ chính xác, sửa thủ công bằng Find & Replace, rồi tải file SRT/VTT/TXT
+          Tải audio → (tuỳ chọn) thêm gợi ý từ khó → sửa từng câu → tải SRT / VTT / TXT
         </p>
+      </div>
+
+      <!-- Steps indicator -->
+      <div class="steps-bar js-header">
+        <div class="step-item" :class="{ active: step === 1, done: step > 1 }">
+          <span class="step-num">1</span>
+          <span class="step-label">Tải audio</span>
+        </div>
+        <div class="step-line" :class="{ on: step > 1 }"></div>
+        <div class="step-item" :class="{ active: step === 2, done: step > 2 }">
+          <span class="step-num">2</span>
+          <span class="step-label">Sửa transcript</span>
+        </div>
+        <div class="step-line" :class="{ on: step > 2 }"></div>
+        <div class="step-item" :class="{ active: step === 3 }">
+          <span class="step-num">3</span>
+          <span class="step-label">Tải file</span>
+        </div>
       </div>
 
       <div class="row justify-content-center">
         <div class="col-lg-10">
-          <div class="convert-card card-modern js-header">
-            <!-- Step 1: Upload & Hint -->
-            <div v-if="!hasSegments" class="upload-step">
-              <div class="editor-toolbar">
-                <div class="editor-toolbar-left">
-                  <i class="bi bi-mic"></i>
-                  <span>Tải audio lên</span>
-                </div>
-                <button type="button" class="btn-import" @click="triggerFilePicker">
-                  <i class="bi bi-upload"></i>
-                  Chọn file audio
-                </button>
+          <div class="tx-card card-modern js-header">
+
+            <!-- ========== STEP 1: Upload ========== -->
+            <div v-if="step === 1" class="step-panel">
+              <div
+                class="dropzone"
+                :class="{ 'dropzone-active': isDragging, 'dropzone-has-file': !!selectedFile }"
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="onDrop"
+                @click="!selectedFile && triggerFilePicker()"
+              >
+                <template v-if="!selectedFile">
+                  <div class="dropzone-icon">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                  </div>
+                  <p class="dropzone-title">Kéo thả file audio vào đây</p>
+                  <p class="dropzone-hint">hoặc bấm để chọn · MP3, WAV, M4A, FLAC, OGG…</p>
+                  <button type="button" class="btn btn-outline-primary btn-sm mt-2" @click.stop="triggerFilePicker">
+                    <i class="bi bi-folder2-open"></i> Chọn file
+                  </button>
+                </template>
+                <template v-else>
+                  <div class="file-chip">
+                    <i class="bi bi-file-earmark-music"></i>
+                    <div class="file-chip-meta">
+                      <strong>{{ selectedFile.name }}</strong>
+                      <span>{{ formatBytes(selectedFile.size) }}</span>
+                    </div>
+                    <button type="button" class="btn-icon" @click.stop="clearFile" title="Đổi file">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </template>
                 <input
                   ref="fileInputRef"
                   type="file"
-                  accept=".mp3,.wav,.m4a,.flac,.ogg,.aac,.wma,.alac,.opus"
+                  accept=".mp3,.wav,.m4a,.flac,.ogg,.aac,.wma,.opus,audio/*"
                   class="d-none"
                   @change="onFileSelected"
                 />
               </div>
 
-              <div class="hint-section">
-                <label class="form-label">Gợi ý ngữ cảnh (Hint) <span class="text-muted small">(tuỳ chọn)</span></label>
-                <div class="hint-row">
-                  <select
-                    v-model="selectedPreset"
-                    class="form-select hint-select"
-                    @change="onPresetChange"
-                  >
-                    <option v-for="opt in presetHints" :key="opt.value" :value="opt.value">
+              <div class="panel-block">
+                <div class="panel-block-title">
+                  <i class="bi bi-lightbulb"></i>
+                  Gợi ý ngữ cảnh
+                  <span class="optional">tuỳ chọn</span>
+                </div>
+                <p class="panel-help">
+                  Giúp nhận đúng tên riêng / thuật ngữ. Để “Không mồi” nếu không chắc — an toàn nhất.
+                </p>
+                <div class="hint-grid">
+                  <select v-model="selectedPreset" class="form-select" @change="onPresetChange">
+                    <option v-for="opt in presetHints" :key="opt.label" :value="opt.value">
                       {{ opt.label }}
                     </option>
                   </select>
                   <input
                     v-model="customHint"
                     type="text"
-                    class="form-control hint-input"
-                    placeholder="Hoặc gõ hint tùy chỉnh (tên nhân vật, thuật ngữ...)"
+                    class="form-control"
+                    placeholder="Hoặc gõ tay: Dế Mèn, Hogwarts…"
                     @input="onCustomHintInput"
                   />
                 </div>
-                <p class="form-text text-muted mt-1">
-                  Hint sẽ được truyền vào Whisper/Groq làm <code>initial_prompt</code> để cải thiện nhận diện từ khó.
-                  Chế độ mặc định "Không mồi" chạy tốt cho mọi audio, không rủi ro mồi sai làm lệch kết quả.
-                </p>
               </div>
 
-              <div class="options-row">
-                <div class="option-field">
+              <div class="panel-block panel-row">
+                <div class="field-grow">
                   <label class="form-label">Ngôn ngữ</label>
-                  <select v-model="language" class="form-select">
+                  <select v-model="langChoice" class="form-select">
                     <option value="">Tự nhận diện</option>
                     <option value="vi">Tiếng Việt</option>
-                    <option value="en">Tiếng Anh</option>
-                    <option value="ja">Tiếng Nhật</option>
-                    <option value="ko">Tiếng Hàn</option>
-                    <option value="zh">Tiếng Trung</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="zh">中文</option>
                   </select>
                 </div>
-                <div class="option-field option-field-action">
-                  <button
-                    type="button"
-                    class="btn btn-ocean hover-lift"
-                    :disabled="loading || !selectedFile"
-                    @click="handlePreview"
-                  >
-                    <span v-if="loading" class="btn-spinner"></span>
-                    <i v-else class="bi bi-play-circle"></i>
-                    {{ loading ? 'Đang transcribe...' : 'Tạo Transcript' }}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  class="btn btn-ocean btn-lg hover-lift"
+                  :disabled="loading || !selectedFile"
+                  @click="handlePreview"
+                >
+                  <span v-if="loading" class="btn-spinner"></span>
+                  <i v-else class="bi bi-magic"></i>
+                  {{ loading ? 'Đang nhận dạng…' : 'Tạo transcript' }}
+                </button>
               </div>
 
-              <p v-if="error" class="text-danger mt-2 mb-0">
+              <p v-if="error" class="alert-inline danger">
                 <i class="bi bi-exclamation-circle"></i> {{ error }}
               </p>
             </div>
 
-            <!-- Step 2: Editor -->
-            <div v-else class="editor-step">
-              <!-- Toolbar -->
-              <div class="editor-toolbar">
-                <div class="editor-toolbar-left">
-                  <i class="bi bi-file-earmark-text"></i>
-                  <span>Transcript Editor</span>
-                  <span class="loaded-file-chip" v-if="selectedFile">
-                    <i class="bi bi-file-earmark-music"></i>{{ selectedFile.name }}
-                  </span>
-                  <span class="badge bg-ocean ms-2">{{ segments.length }} segments</span>
-                  <span class="badge bg-secondary ms-1">{{ formatDuration(duration) }}</span>
+            <!-- ========== STEP 2+3: Editor ========== -->
+            <div v-else class="step-panel">
+              <div class="editor-top">
+                <div class="editor-top-left">
+                  <span class="pill"><i class="bi bi-soundwave"></i> {{ segments.length }} câu</span>
+                  <span class="pill muted"><i class="bi bi-clock"></i> {{ formatDuration(duration) }}</span>
+                  <span v-if="selectedFile" class="pill muted file-name">{{ selectedFile.name }}</span>
                 </div>
-                <div class="editor-toolbar-right">
-                  <button type="button" class="btn btn-outline-secondary btn-sm" @click="resetEditor">
-                    <i class="bi bi-arrow-counterclockwise"></i> Làm lại
-                  </button>
-                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" @click="resetEditor">
+                  <i class="bi bi-arrow-counterclockwise"></i> Làm lại từ đầu
+                </button>
               </div>
 
-              <!-- Hint adjustment row -->
-              <div class="hint-adjust-row">
-                <label class="form-label small mb-1">Đổi hint & transcribe lại:</label>
-                <div class="hint-row">
-                  <select
-                    v-model="selectedPreset"
-                    class="form-select hint-select"
-                    @change="onPresetChange"
-                  >
-                    <option v-for="opt in presetHints" :key="opt.value" :value="opt.value">
+              <!-- Re-hint -->
+              <details class="rehint-box">
+                <summary>
+                  <i class="bi bi-sliders"></i> Đổi gợi ý &amp; chạy lại (giữ audio đã tải)
+                </summary>
+                <div class="hint-grid mt-2">
+                  <select v-model="selectedPreset" class="form-select" @change="onPresetChange">
+                    <option v-for="opt in presetHints" :key="opt.label" :value="opt.value">
                       {{ opt.label }}
                     </option>
                   </select>
                   <input
                     v-model="customHint"
                     type="text"
-                    class="form-control hint-input"
-                    placeholder="Hoặc gõ hint tùy chỉnh..."
+                    class="form-control"
+                    placeholder="Hint tuỳ chỉnh…"
                     @input="onCustomHintInput"
                   />
                   <button
                     type="button"
-                    class="btn btn-ocean btn-sm"
+                    class="btn btn-ocean"
                     :disabled="loading"
                     @click="handleReTranscribe"
                   >
                     <span v-if="loading" class="btn-spinner"></span>
                     <i v-else class="bi bi-arrow-clockwise"></i>
-                    Thử lại
+                    Chạy lại
+                  </button>
+                </div>
+              </details>
+
+              <!-- Find & replace -->
+              <div class="fr-bar">
+                <div class="fr-inputs">
+                  <div class="fr-field">
+                    <i class="bi bi-search"></i>
+                    <input
+                      v-model="findText"
+                      type="text"
+                      placeholder="Tìm từ sai…"
+                      @keyup.enter="applyFindReplace"
+                    />
+                  </div>
+                  <div class="fr-field">
+                    <i class="bi bi-pencil"></i>
+                    <input
+                      v-model="replaceText"
+                      type="text"
+                      placeholder="Thay bằng…"
+                      @keyup.enter="applyFindReplace"
+                    />
+                  </div>
+                </div>
+                <div class="fr-actions">
+                  <label class="fr-case">
+                    <input v-model="caseSensitive" type="checkbox" />
+                    Phân biệt hoa/thường
+                  </label>
+                  <span v-if="findText.trim()" class="fr-count">{{ matchCount }} khớp</span>
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    :disabled="!findText.trim()"
+                    @click="applyFindReplace"
+                  >
+                    Thay tất cả
                   </button>
                 </div>
               </div>
 
-              <!-- Find & Replace -->
-              <div class="find-replace-bar">
-                <div class="find-replace-left">
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input
-                      v-model="findText"
-                      type="text"
-                      class="form-control"
-                      placeholder="Tìm..."
-                      @keyup.enter="applyFindReplace"
-                    />
-                    <span class="input-group-text"><i class="bi bi-arrow-right"></i></span>
-                    <input
-                      v-model="replaceText"
-                      type="text"
-                      class="form-control"
-                      placeholder="Thay bằng..."
-                      @keyup.enter="applyFindReplace"
-                    />
-                    <button
-                      type="button"
-                      class="btn btn-ocean"
-                      @click="applyFindReplace"
-                      :disabled="!findText.trim()"
-                    >
-                      Thay thế tất cả
-                    </button>
-                    <div class="form-check form-switch ms-2 d-flex align-items-center">
-                      <input
-                        v-model="caseSensitive"
-                        class="form-check-input"
-                        type="checkbox"
-                        id="caseSensitive"
-                      />
-                      <label class="form-check-label small" for="caseSensitive">Aa</label>
-                    </div>
-                    <span v-if="findText.trim()" class="match-count ms-2 text-muted small">
-                      {{ matchCount }} khớp
-                    </span>
-                  </div>
+              <!-- Segments -->
+              <div class="seg-shell">
+                <div class="seg-head">
+                  <span>Thời gian</span>
+                  <span>Nội dung — bấm vào ô để sửa</span>
                 </div>
-              </div>
-
-              <!-- Segment List Editor -->
-              <div class="segment-editor">
-                <div class="segment-header">
-                  <div class="segment-col-time">Thời gian</div>
-                  <div class="segment-col-text">Nội dung</div>
-                </div>
-                <div class="segment-list" ref="segmentListEl">
+                <div class="seg-list" ref="segmentListEl">
                   <div
                     v-for="(seg, index) in segments"
                     :key="seg.id"
-                    class="segment-row"
-                    :class="{ 'segment-row-editing': editingIndex === index }"
+                    class="seg-row"
+                    :class="{ editing: editingIndex === index }"
                   >
-                    <div class="segment-col-time">
-                      <span class="segment-time">{{ formatTime(seg.start) }} – {{ formatTime(seg.end) }}</span>
+                    <div class="seg-time">
+                      <span>{{ formatTime(seg.start) }}</span>
+                      <span class="sep">→</span>
+                      <span>{{ formatTime(seg.end) }}</span>
                     </div>
-                    <div class="segment-col-text">
-                      <textarea
-                        v-model="seg.text"
-                        class="segment-textarea"
-                        :rows="1"
-                        @focus="editingIndex = index"
-                        @blur="editingIndex = -1"
-                        @input="autoResizeTextarea($event)"
-                      ></textarea>
-                    </div>
+                    <textarea
+                      v-model="seg.text"
+                      class="seg-text"
+                      rows="1"
+                      @focus="editingIndex = index"
+                      @blur="editingIndex = -1"
+                      @input="autoResizeTextarea($event)"
+                    ></textarea>
+                  </div>
+                  <div v-if="!segments.length" class="seg-empty">
+                    Chưa có câu nào — thử chạy lại với hint khác.
                   </div>
                 </div>
               </div>
 
-              <!-- Export -->
-              <div class="export-section">
-                <div class="export-options">
-                  <div class="option-field">
+              <!-- Export sticky-ish -->
+              <div class="export-bar">
+                <div class="export-fields">
+                  <div>
                     <label class="form-label">Định dạng</label>
                     <select v-model="exportFormat" class="form-select">
-                      <option value="srt">SRT (SubRip)</option>
-                      <option value="vtt">VTT (WebVTT)</option>
-                      <option value="txt">TXT (Plain text)</option>
+                      <option value="srt">SRT — phụ đề</option>
+                      <option value="vtt">VTT — web</option>
+                      <option value="txt">TXT — văn bản</option>
                     </select>
                   </div>
-                  <div class="option-field">
+                  <div class="grow">
                     <label class="form-label">Tên file</label>
                     <input
                       v-model="exportFilename"
@@ -248,23 +274,22 @@
                       :placeholder="suggestedFilename"
                     />
                   </div>
-                  <div class="option-field option-field-action">
-                    <button
-                      type="button"
-                      class="btn btn-ocean hover-lift download-btn"
-                      :disabled="loading || !segments.length"
-                      @click="handleExport"
-                    >
-                      <span v-if="loading" class="btn-spinner"></span>
-                      <i v-else class="bi bi-file-earmark-arrow-down"></i>
-                      {{ loading ? 'Đang tạo file...' : 'Tải xuống' }}
-                    </button>
-                  </div>
                 </div>
-                <p v-if="error" class="text-danger mt-2 mb-0">
-                  <i class="bi bi-exclamation-circle"></i> {{ error }}
-                </p>
+                <button
+                  type="button"
+                  class="btn btn-ocean btn-lg hover-lift"
+                  :disabled="loading || !segments.length"
+                  @click="handleExport"
+                >
+                  <span v-if="loading" class="btn-spinner"></span>
+                  <i v-else class="bi bi-download"></i>
+                  {{ loading ? 'Đang tạo…' : 'Tải xuống' }}
+                </button>
               </div>
+
+              <p v-if="error" class="alert-inline danger mt-3">
+                <i class="bi bi-exclamation-circle"></i> {{ error }}
+              </p>
             </div>
           </div>
         </div>
@@ -274,17 +299,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { animate, createTimeline, stagger, spring } from 'animejs'
+import { ref, computed, nextTick, onMounted } from 'vue'
+import { createTimeline, stagger } from 'animejs'
 import { useTranscriptEditor } from '@/composables/useTranscriptEditor'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const {
   loading,
   error,
-  jobId,
   segments,
-  language,
   duration,
   selectedPreset,
   customHint,
@@ -304,389 +327,473 @@ const {
   getCurrentHint,
 } = useTranscriptEditor()
 
-// Local state
 const selectedFile = ref(null)
 const fileInputRef = ref(null)
 const segmentListEl = ref(null)
 const editingIndex = ref(-1)
-const hasSegments = computed(() => segments.value.length > 0)
+const isDragging = ref(false)
+const langChoice = ref('') // '' = auto — không đụng language result từ API
+
+const step = computed(() => (segments.value.length > 0 ? 2 : 1))
 const matchCount = computed(() => countMatches())
 const suggestedFilename = computed(() => {
-  if (selectedFile.value) {
-    return selectedFile.value.name.replace(/\.[^/.]+$/, '')
-  }
+  if (selectedFile.value) return selectedFile.value.name.replace(/\.[^/.]+$/, '')
   return 'transcript'
 })
 
-// Auto-resize textarea
-function autoResizeTextarea(event) {
-  const textarea = event.target
-  textarea.style.height = 'auto'
-  textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`
+function formatBytes(n) {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Trigger file picker
-function triggerFilePicker() {
-  fileInputRef.value?.click()
-}
-
-// Handle file selection
-function onFileSelected(e) {
-  const file = e.target.files?.[0]
-  e.target.value = ''
-  if (!file) return
-
-  // Validate file type
-  const validExtensions = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.aac', '.wma', '.alac', '.opus']
-  const ext = '.' + file.name.split('.').pop().toLowerCase()
-  if (!validExtensions.includes(ext)) {
-    window.$toast?.error('Định dạng file không hỗ trợ')
-    return
-  }
-
-  selectedFile.value = file
-  console.log('[TranscriptEditor] đã chọn file:', file.name, `(${file.size} bytes)`)
-}
-
-// Preset change handler
-function onPresetChange() {
-  if (selectedPreset.value) {
-    customHint.value = ''
-  }
-}
-
-// Custom hint input handler
-function onCustomHintInput() {
-  if (customHint.value.trim()) {
-    selectedPreset.value = ''
-  }
-}
-
-// Handle preview (first transcribe)
-async function handlePreview() {
-  if (!selectedFile.value) return
-
-  const hint = getCurrentHint()
-  const lang = language.value || null
-
-  await previewAudio(selectedFile.value, { language: lang, prompt: hint || null })
-}
-
-// Handle re-transcribe with new hint
-async function handleReTranscribe() {
-  const hint = getCurrentHint()
-  const lang = language.value || null
-
-  await reTranscribe({ language: lang, prompt: hint || null })
-}
-
-// Apply find & replace
-function applyFindReplace() {
-  applyFindReplaceCore()
-  // Scroll to first match if any
-  nextTick(() => {
-    if (matchCount.value > 0 && segmentListEl.value) {
-      const firstMatch = segmentListEl.value.querySelector('.segment-row:has(textarea:focus)')
-      if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  })
-}
-
-// Handle export
-async function handleExport() {
-  const filename = exportFilename.value || suggestedFilename.value
-  await exportTranscript({ format: exportFormat.value, filename })
-}
-
-// Reset editor to upload state
-function resetEditor() {
-  reset()
-  selectedFile.value = null
-  editingIndex.value = -1
-}
-
-// Format duration for display
 function formatDuration(seconds) {
   if (!seconds) return '0:00'
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = Math.floor(seconds % 60)
-  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-  return `${m}:${s.toString().padStart(2, '0')}`
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
-// Animation on mount
-onMounted(() => {
-  createTimeline({ defaults: { ease: 'outExpo' } })
-    .add('.js-header', {
-      opacity: [0, 1],
-      translateY: [24, 0],
-      duration: 650,
-      delay: stagger(120)
-    })
-})
+function autoResizeTextarea(event) {
+  const el = event.target
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+}
 
-onBeforeUnmount(() => {
-  // Cleanup if needed
+function triggerFilePicker() {
+  fileInputRef.value?.click()
+}
+
+function acceptFile(file) {
+  if (!file) return
+  const ok = /\.(mp3|wav|m4a|flac|ogg|aac|wma|opus|alac)$/i.test(file.name) || file.type.startsWith('audio/')
+  if (!ok) {
+    window.$toast?.error('Định dạng audio không hỗ trợ')
+    return
+  }
+  selectedFile.value = file
+}
+
+function onFileSelected(e) {
+  const file = e.target.files?.[0]
+  e.target.value = ''
+  acceptFile(file)
+}
+
+function onDrop(e) {
+  isDragging.value = false
+  acceptFile(e.dataTransfer?.files?.[0])
+}
+
+function clearFile() {
+  selectedFile.value = null
+}
+
+function onPresetChange() {
+  if (selectedPreset.value) customHint.value = ''
+}
+function onCustomHintInput() {
+  if (customHint.value.trim()) selectedPreset.value = ''
+}
+
+async function handlePreview() {
+  if (!selectedFile.value) return
+  await previewAudio(selectedFile.value, {
+    language: langChoice.value || null,
+    prompt: getCurrentHint() || null
+  })
+  nextTick(() => {
+    document.querySelectorAll('.seg-text').forEach((el) => {
+      el.style.height = 'auto'
+      el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+    })
+  })
+}
+
+async function handleReTranscribe() {
+  await reTranscribe({
+    language: langChoice.value || null,
+    prompt: getCurrentHint() || null
+  })
+}
+
+function applyFindReplace() {
+  applyFindReplaceCore()
+}
+
+async function handleExport() {
+  await exportTranscript({
+    format: exportFormat.value,
+    filename: exportFilename.value || suggestedFilename.value
+  })
+}
+
+function resetEditor() {
+  reset()
+  selectedFile.value = null
+  editingIndex.value = -1
+  langChoice.value = ''
+}
+
+onMounted(() => {
+  createTimeline({ defaults: { ease: 'outExpo' } }).add('.js-header', {
+    opacity: [0, 1],
+    translateY: [20, 0],
+    duration: 600,
+    delay: stagger(90)
+  })
 })
 </script>
 
 <style scoped>
-.js-header {
-  opacity: 0;
-}
+.js-header { opacity: 0; }
 
-.convert-card {
-  padding: 1.75rem;
-  border-radius: 20px;
-}
+.tx-page { min-height: 60vh; }
 
-.editor-toolbar {
+.steps-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+  justify-content: center;
+  gap: 0;
+  margin: 0 auto 1.75rem;
+  max-width: 520px;
 }
-
-.editor-toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.editor-toolbar-right {
+.step-item {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--docforge-gray);
+}
+.step-item.active { color: var(--docforge-base); }
+.step-item.done { color: var(--docforge-success, #10b981); }
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+  border: 2px solid currentColor;
+  background: var(--docforge-white);
+}
+.step-item.active .step-num {
+  background: var(--docforge-gradient-primary);
+  border-color: transparent;
+  color: #fff;
+}
+.step-item.done .step-num {
+  background: var(--docforge-success, #10b981);
+  border-color: transparent;
+  color: #fff;
+}
+.step-line {
+  width: 40px; height: 2px;
+  margin: 0 8px;
+  background: var(--docforge-bdr-color);
+}
+.step-line.on { background: var(--docforge-success, #10b981); }
+
+.tx-card {
+  padding: 1.5rem 1.75rem;
+  border-radius: 20px;
 }
 
-.loaded-file-chip {
+/* Dropzone */
+.dropzone {
+  border: 2px dashed var(--docforge-bdr-color);
+  border-radius: 16px;
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--docforge-transition);
+  background: var(--docforge-light);
+  margin-bottom: 1.25rem;
+}
+.dropzone:hover,
+.dropzone-active {
+  border-color: var(--docforge-base);
+  background: rgba(253, 85, 35, 0.06);
+}
+.dropzone-has-file {
+  cursor: default;
+  border-style: solid;
+  padding: 1.25rem;
+}
+.dropzone-icon {
+  font-size: 2.5rem;
+  color: var(--docforge-ocean);
+  margin-bottom: 0.5rem;
+}
+.dropzone-title { font-weight: 700; margin: 0 0 0.25rem; color: var(--docforge-black); }
+.dropzone-hint { font-size: 13px; color: var(--docforge-gray); margin: 0; }
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+.file-chip > i { font-size: 1.75rem; color: var(--docforge-ocean); }
+.file-chip-meta { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.file-chip-meta strong { color: var(--docforge-black); }
+.file-chip-meta span { font-size: 12px; color: var(--docforge-gray); }
+.btn-icon {
+  border: none; background: transparent; color: var(--docforge-gray);
+  width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+}
+.btn-icon:hover { background: var(--docforge-bdr-color); color: var(--docforge-danger, #ef4444); }
+
+.panel-block {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 14px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-white);
+}
+.panel-block-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: var(--docforge-black);
+}
+.optional {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--docforge-light);
+  color: var(--docforge-gray);
+}
+.panel-help {
+  font-size: 13px;
+  color: var(--docforge-gray);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+.hint-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) 1.4fr auto;
+  gap: 10px;
+}
+.panel-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+.field-grow { flex: 1; min-width: 160px; }
+
+.alert-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0.75rem 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.alert-inline.danger { color: var(--docforge-danger, #ef4444); }
+
+.editor-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+.editor-top-left { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: var(--bs-ocean-bg-subtle, #e8f4fd);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: var(--bs-ocean, #0077cc);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(30, 64, 175, 0.12);
+  color: var(--docforge-ocean);
 }
-
-.badge {
-  font-size: 0.75rem;
-  padding: 4px 8px;
+.pill.muted {
+  background: var(--docforge-light);
+  color: var(--docforge-gray);
 }
+.file-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.hint-section {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: var(--bs-light, #f8f9fa);
-  border-radius: 12px;
-}
-
-.hint-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.hint-select {
-  min-width: 220px;
-  flex-shrink: 0;
-}
-
-.hint-input {
-  flex: 1;
-  min-width: 200px;
-}
-
-.hint-adjust-row {
+.rehint-box {
   margin-bottom: 1rem;
-  padding: 1rem;
-  background: var(--bs-light, #f8f9fa);
+  padding: 0.75rem 1rem;
   border-radius: 12px;
-  border: 1px solid var(--bs-border-color, #dee2e6);
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-light);
 }
-
-.find-replace-bar {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: var(--bs-light, #f8f9fa);
-  border-radius: 12px;
-  border: 1px solid var(--bs-border-color, #dee2e6);
-}
-
-.find-replace-left {
+.rehint-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--docforge-black);
+  list-style: none;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
 }
+.rehint-box summary::-webkit-details-marker { display: none; }
 
-.find-replace-bar .input-group {
-  flex: 1;
-  min-width: 300px;
-  max-width: 500px;
-}
-
-.match-count {
-  white-space: nowrap;
-}
-
-.segment-editor {
-  margin: 1rem 0;
-  border: 1px solid var(--bs-border-color, #dee2e6);
+.fr-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
   border-radius: 12px;
-  overflow: hidden;
-  background: white;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-white);
+  margin-bottom: 1rem;
 }
-
-.segment-header {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  padding: 0.75rem 1rem;
-  background: var(--bs-light, #f8f9fa);
-  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--bs-secondary, #6c757d);
-}
-
-.segment-list {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.segment-row {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  align-items: start;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
-  transition: background 0.15s;
-}
-
-.segment-row:last-child {
-  border-bottom: none;
-}
-
-.segment-row:hover {
-  background: var(--bs-light, #f8f9fa);
-}
-
-.segment-row-editing {
-  background: var(--bs-ocean-bg-subtle, #e8f4fd);
-}
-
-.segment-col-time {
+.fr-inputs { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.fr-field {
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-light);
   min-width: 160px;
-}
-
-.segment-time {
-  font-family: 'Monospace', monospace;
-  font-size: 0.8rem;
-  color: var(--bs-secondary, #6c757d);
-  white-space: nowrap;
-}
-
-.segment-col-text {
-  min-width: 0;
-}
-
-.segment-textarea {
-  width: 100%;
-  min-height: 38px;
-  max-height: 120px;
-  padding: 6px 10px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  resize: none;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-}
-
-.segment-textarea:hover {
-  background: var(--bs-light, #f8f9fa);
-}
-
-.segment-textarea:focus {
-  outline: none;
-  border-color: var(--bs-ocean, #0077cc);
-  background: white;
-  box-shadow: 0 0 0 3px var(--bs-ocean-bg-subtle, #e8f4fd);
-}
-
-.export-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--bs-border-color, #dee2e6);
-}
-
-.export-options {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-}
-
-.export-options .option-field {
   flex: 1;
-  min-width: 180px;
+}
+.fr-field i { color: var(--docforge-gray); font-size: 14px; }
+.fr-field input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+  color: var(--docforge-black);
+}
+.fr-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fr-case {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--docforge-gray);
+  margin: 0;
+  cursor: pointer;
+}
+.fr-count { font-size: 12px; font-weight: 700; color: var(--docforge-ocean); }
+
+.seg-shell {
+  border: 1px solid var(--docforge-bdr-color);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--docforge-white);
+  margin-bottom: 1.25rem;
+}
+.seg-head {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 8px;
+  padding: 0.65rem 1rem;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--docforge-gray);
+  background: var(--docforge-light);
+  border-bottom: 1px solid var(--docforge-bdr-color);
+}
+.seg-list { max-height: min(480px, 55vh); overflow-y: auto; }
+.seg-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 8px;
+  padding: 0.45rem 1rem;
+  border-bottom: 1px solid var(--docforge-bdr-color);
+  transition: background 0.15s;
+}
+.seg-row:last-child { border-bottom: none; }
+.seg-row:hover { background: var(--docforge-light); }
+.seg-row.editing { background: rgba(30, 64, 175, 0.08); }
+.seg-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--docforge-gray);
+  padding-top: 8px;
+}
+.seg-time .sep { opacity: 0.5; }
+.seg-text {
+  width: 100%;
+  min-height: 36px;
+  max-height: 140px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--docforge-black);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.seg-text:focus {
+  outline: none;
+  border-color: var(--docforge-ocean);
+  background: var(--docforge-white);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+}
+.seg-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--docforge-gray);
 }
 
-.export-options .option-field-action {
-  flex-shrink: 0;
+.export-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: linear-gradient(135deg, rgba(253, 85, 35, 0.06), rgba(30, 64, 175, 0.06));
 }
-
-.btn-import {
-  margin-left: auto;
+.export-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1;
 }
+.export-fields .grow { flex: 1; min-width: 160px; }
 
 .btn-spinner {
   display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.5em;
+  width: 1em; height: 1em;
+  margin-right: 0.4em;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: spin 0.75s linear infinite;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -0.15em;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .hint-row {
-    flex-direction: column;
-  }
-  .hint-select, .hint-input {
-    width: 100%;
-  }
-  .find-replace-bar .input-group {
-    max-width: 100%;
-  }
-  .segment-header, .segment-row {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-  .segment-col-time {
-    min-width: auto;
-  }
-  .export-options {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .export-options .option-field {
-    width: 100%;
-  }
+@media (max-width: 767.98px) {
+  .hint-grid { grid-template-columns: 1fr; }
+  .seg-head, .seg-row { grid-template-columns: 1fr; }
+  .seg-time { padding-top: 0; }
+  .step-label { display: none; }
+  .export-bar { flex-direction: column; align-items: stretch; }
 }
 </style>

@@ -1,41 +1,42 @@
 <template>
   <div class="home-page">
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero-section">
       <div class="hero-bg">
-        <div class="hero-gradient"></div>
-        <img src="/images/shapes/banner-two-pattern.png" alt="" class="hero-pattern" />
-      </div>
-
-      <div class="floating-elements">
-        <img src="/images/shapes/about-two-shape-1.png" alt="" class="floating-element element-1" />
-        <img src="/images/shapes/about-two-shape-2.png" alt="" class="floating-element element-2" />
-        <img src="/images/shapes/about-two-shape-3.png" alt="" class="floating-element element-3" />
-        <img src="/images/shapes/about-two-shape-4.png" alt="" class="floating-element element-4" />
+        <div class="hero-mesh"></div>
+        <div class="hero-grid"></div>
       </div>
 
       <div class="container">
         <div class="hero-content text-center">
-          <img src="/favicon.ico" alt="DocForge" class="hero-logo js-hero-badge" />
           <div class="hero-badge js-hero-badge">
-            <i class="bi bi-stars text-ocean"></i>
+            <i class="bi bi-lightning-charge-fill text-primary"></i>
             <span>Bộ công cụ chuyển đổi tài liệu</span>
-            <i class="bi bi-arrow-left-right text-primary"></i>
+            <i class="bi bi-arrow-left-right text-ocean"></i>
           </div>
 
           <h1 class="hero-title">
-            <span class="title-primary js-hero-title">Chuyển đổi tài liệu</span>
-            <span class="title-highlight text-gradient-sunset js-hero-title">Nhanh</span>
-            <span class="title-secondary text-gradient-ocean js-hero-title"> Chính xác</span>
+            <span class="js-hero-title">Chuyển đổi tài liệu</span>
+            <span class="title-line">
+              <span class="text-gradient-sunset js-hero-title">Nhanh</span>
+              <span class="sep js-hero-title">·</span>
+              <span class="text-gradient-ocean js-hero-title">Chính xác</span>
+            </span>
           </h1>
 
           <p class="hero-subtitle js-hero-subtitle mx-auto">
-            DocForge tập hợp các công cụ chuyển đổi Markdown, PDF, Word và văn bản thuần
-            về đúng định dạng bạn cần — bắt đầu với Markdown → PDF, nhiều định dạng khác đang được xây dựng.
+            DocForge tập hợp công cụ chuyển Markdown, PDF, Word và âm thanh
+            về đúng định dạng bạn cần — bắt đầu với Markdown → PDF.
           </p>
 
           <div class="hero-actions js-hero-actions justify-content-center">
-            <router-link to="/convert/md-to-pdf" class="btn btn-ocean btn-lg hover-lift" @mousedown="pressBtn" @mouseup="releaseBtn" @mouseleave="releaseBtn">
+            <router-link
+              to="/convert/md-to-pdf"
+              class="btn btn-ocean btn-lg hover-lift"
+              @mousedown="pressBtn"
+              @mouseup="releaseBtn"
+              @mouseleave="releaseBtn"
+            >
               <i class="bi bi-file-earmark-arrow-down"></i>
               <span>Dùng Markdown → PDF ngay</span>
               <i class="bi bi-arrow-right"></i>
@@ -49,7 +50,7 @@
       </div>
     </section>
 
-    <!-- Live demo: khung "kéo qua xem doc" (lấy cảm hứng từ forgedoc.com/product) -->
+    <!-- Live compare demo -->
     <section class="demo-section py-5">
       <div class="container">
         <div class="text-center mb-4">
@@ -59,14 +60,14 @@
           </div>
           <h2 class="section-title js-reveal">
             Gõ <span class="text-gradient-primary">Markdown</span>,
-            kéo để xem <span class="text-gradient-ocean">PDF</span> hiện ra
+            kéo để xem <span class="text-gradient-ocean">PDF</span>
           </h2>
           <p class="section-subtitle js-reveal">
-            Kéo thanh chia đôi để so sánh nội dung gốc và bản xem trước — y hệt trải nghiệm gõ và thấy ngay
+            Kéo thanh chia đôi để so sánh nội dung gốc và bản xem trước
           </p>
         </div>
 
-        <div class="demo-card card-glass">
+        <div class="demo-card card-glass js-reveal">
           <div class="demo-window-bar">
             <div class="window-dots">
               <span class="dot dot-red"></span>
@@ -77,47 +78,81 @@
               <i class="bi bi-markdown"></i>
               document.md
             </div>
+            <div class="window-status" v-if="isDemoLoading">
+              <span class="status-pulse"></span>
+              Đang tạo PDF…
+            </div>
           </div>
 
           <textarea
             v-model="demoContent"
             class="form-control demo-textarea-input"
-            rows="4"
-            placeholder="# Xin chào&#10;&#10;Đây là **Markdown** của bạn..."
+            rows="5"
+            spellcheck="false"
+            placeholder="# Tiêu đề&#10;&#10;Viết **Markdown** tại đây…"
           ></textarea>
 
-          <div class="compare-frame demo-compare-frame" ref="compareFrameEl">
-            <!-- Lớp dưới: bản xem trước PDF, luôn phủ full khung -->
+          <div
+            class="compare-frame demo-compare-frame"
+            ref="compareFrameEl"
+            role="img"
+            :aria-label="`So sánh Markdown và PDF, vị trí ${Math.round(splitPercent)}%`"
+          >
+            <!-- PDF layer (dưới) -->
             <div class="compare-layer compare-layer-pdf">
-              <!-- <iframe v-if="demoPreviewHtml" :srcdoc="demoPreviewHtml" class="demo-preview-frame" title="Xem trước PDF"></iframe> -->
               <iframe
-                  v-if="demoPreviewUrl"
-                  :src="demoPreviewUrl"
-                  class="demo-preview-frame"
-                  title="Xem trước PDF"
+                v-if="demoPreviewUrl"
+                :key="demoPreviewUrl"
+                :src="demoPreviewUrl"
+                class="demo-preview-frame"
+                title="Xem trước PDF"
               ></iframe>
               <div v-else class="demo-preview-placeholder">
-                <i class="bi bi-file-earmark-pdf"></i>
-                <span>{{ demoError ? demoError : 'Gõ Markdown ở trên để xem bản PDF' }}</span>
+                <template v-if="isDemoLoading">
+                  <div class="placeholder-spinner"></div>
+                  <span>Đang render PDF…</span>
+                </template>
+                <template v-else-if="demoError">
+                  <i class="bi bi-exclamation-triangle text-warning"></i>
+                  <span>{{ demoError }}</span>
+                </template>
+                <template v-else>
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <span>Gõ Markdown ở trên để xem bản PDF</span>
+                </template>
               </div>
             </div>
 
-            <!-- Lớp trên: mã Markdown gốc, bị clip theo % kéo -->
+            <!-- MD layer (trên, bị clip) -->
             <div class="compare-layer compare-layer-md" :style="mdLayerStyle">
               <div class="compare-md-inner">
-                <div class="compare-md-label"><i class="bi bi-markdown"></i> Markdown gốc</div>
-                <pre class="compare-md-source">{{ demoContent }}</pre>
+                <div class="compare-md-label">
+                  <i class="bi bi-markdown"></i> Markdown gốc
+                </div>
+                <pre class="compare-md-source">{{ demoContent || '…' }}</pre>
               </div>
             </div>
 
-            <!-- Tay kéo -->
-            <div class="compare-handle" ref="handleEl" tabindex="0" @keydown="onHandleKeydown" aria-label="Kéo để so sánh Markdown và PDF">
+            <!-- Handle -->
+            <div
+              class="compare-handle"
+              ref="handleEl"
+              tabindex="0"
+              role="slider"
+              :aria-valuenow="Math.round(splitPercent)"
+              aria-valuemin="3"
+              aria-valuemax="97"
+              aria-label="Kéo để so sánh Markdown và PDF"
+              @keydown="onHandleKeydown"
+            >
               <span class="compare-handle-line"></span>
-              <span class="compare-handle-grip"><i class="bi bi-arrow-left-right"></i></span>
+              <span class="compare-handle-grip">
+                <i class="bi bi-arrow-left-right"></i>
+              </span>
             </div>
 
-            <span class="compare-tag compare-tag-left">MD</span>
-            <span class="compare-tag compare-tag-right">PDF</span>
+            <span class="compare-tag compare-tag-left" :style="{ opacity: splitPercent > 12 ? 1 : 0 }">MD</span>
+            <span class="compare-tag compare-tag-right" :style="{ opacity: splitPercent < 88 ? 1 : 0 }">PDF</span>
           </div>
 
           <div class="text-center mt-4">
@@ -130,9 +165,8 @@
       </div>
     </section>
 
-    <!-- Tools Section -->
-    <section id="cong-cu" class="tools-section py-5 bg-gradient-light">
-      <img src="/images/shapes/why-choose-two-pattern.png" alt="" class="tools-bg-pattern" />
+    <!-- Tools -->
+    <section id="cong-cu" class="tools-section py-5">
       <div class="container">
         <div class="text-center mb-5">
           <div class="section-badge js-reveal">
@@ -143,12 +177,12 @@
             Một nền tảng, <span class="text-gradient-primary">nhiều định dạng</span>
           </h2>
           <p class="section-subtitle js-reveal">
-            Markdown → PDF và PDF → Word đã sẵn sàng, các công cụ còn lại đang được xây dựng
+            Markdown → PDF, PDF → Word và Âm thanh → Văn bản đã sẵn sàng
           </p>
         </div>
 
         <div class="row g-4">
-          <div class="col-lg-4 col-md-6" v-for="(tool, index) in tools" :key="index">
+          <div class="col-lg-4 col-md-6" v-for="(tool, index) in tools" :key="tool.title">
             <component
               :is="tool.status === 'available' ? 'router-link' : 'div'"
               :to="tool.status === 'available' ? tool.to : undefined"
@@ -175,14 +209,13 @@
       </div>
     </section>
 
-    <!-- Process Section -->
+    <!-- Process -->
     <section class="process-section py-5">
-      <img src="/images/shapes/process-one-map.png" alt="" class="process-bg-map" />
       <div class="container">
         <div class="text-center mb-5">
           <div class="section-badge js-reveal">
             <i class="bi bi-gear text-ocean"></i>
-            <span>Quy trình đơn giản</span>
+            <span>Quy trình</span>
           </div>
           <h2 class="section-title js-reveal">
             Xong tài liệu chỉ với <span class="text-gradient-primary">3 bước</span>
@@ -190,10 +223,13 @@
         </div>
 
         <div class="process-timeline">
-          <div class="process-step js-reveal" v-for="(step, index) in processSteps" :key="index" :data-reveal-index="index">
-            <div class="step-number" :class="step.colorClass">
-              {{ index + 1 }}
-            </div>
+          <div
+            class="process-step js-reveal"
+            v-for="(step, index) in processSteps"
+            :key="step.title"
+            :data-reveal-index="index"
+          >
+            <div class="step-number" :class="step.colorClass">{{ index + 1 }}</div>
             <div class="step-icon" :class="step.iconClass">
               <i :class="step.icon"></i>
             </div>
@@ -201,17 +237,15 @@
               <h4 class="step-title">{{ step.title }}</h4>
               <p class="step-description">{{ step.description }}</p>
             </div>
-            <div class="step-connector" v-if="index < processSteps.length - 1"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CTA Section -->
+    <!-- CTA -->
     <section class="cta-section py-5">
       <div class="container">
         <div class="cta-card card-glass js-reveal">
-          <img src="/images/shapes/cta-one-shape-bg.png" alt="" class="cta-bg-shape" />
           <div class="row align-items-center">
             <div class="col-lg-8">
               <div class="cta-content">
@@ -223,31 +257,31 @@
                 </p>
                 <div class="cta-features">
                   <div class="cta-feature">
-                    <i class="bi bi-check-circle text-success"></i>
+                    <i class="bi bi-check-circle-fill text-success"></i>
                     <span>Nhiều theme đẹp sẵn có</span>
                   </div>
                   <div class="cta-feature">
-                    <i class="bi bi-check-circle text-success"></i>
+                    <i class="bi bi-check-circle-fill text-success"></i>
                     <span>Xem trước trước khi tải</span>
                   </div>
                   <div class="cta-feature">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Hoàn toàn miễn phí</span>
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>Hoàn toàn miễn phí · không lưu nội dung</span>
                   </div>
                 </div>
               </div>
             </div>
             <div class="col-lg-4 text-center">
-              <div class="cta-actions">
-                <router-link to="/convert/md-to-pdf" class="btn btn-primary btn-xl hover-lift mb-3">
-                  <i class="bi bi-file-earmark-arrow-down"></i>
-                  <span>Chuyển đổi ngay</span>
-                </router-link>
-                <p class="cta-note">
-                  <i class="bi bi-shield-check text-ocean"></i>
-                  Không lưu trữ nội dung của bạn
-                </p>
-              </div>
+              <router-link
+                to="/convert/md-to-pdf"
+                class="btn btn-primary btn-xl hover-lift"
+                @mousedown="pressBtn"
+                @mouseup="releaseBtn"
+                @mouseleave="releaseBtn"
+              >
+                <i class="bi bi-file-earmark-arrow-down"></i>
+                <span>Chuyển đổi ngay</span>
+              </router-link>
             </div>
           </div>
         </div>
@@ -258,51 +292,71 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { animate, createTimeline, stagger, createSpring, createDraggable } from 'animejs'
+import { animate, createTimeline, stagger, spring, createDraggable } from 'animejs'
 import { useConverter } from '@/composables/useMdToPdfConverter'
 
-function debounce(fn, wait = 300) {
-  let timeout
+function debounce(fn, wait = 400) {
+  let t
   return (...args) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => fn(...args), wait)
+    clearTimeout(t)
+    t = setTimeout(() => fn(...args), wait)
   }
 }
 
-// ----- Demo trực tiếp: gõ Markdown ở trên, kéo thanh chia để so sánh với PDF -----
+function clamp(n, min, max) {
+  return Math.min(max, Math.max(min, n))
+}
+
+// ----- Demo content + preview -----
+const demoContent = ref(`# Xin chào từ DocForge
+
+Chuyển **Markdown** → PDF tức thì.
+
+## Tính năng
+- Nhiều theme
+- Xem trước realtime
+- Không lưu nội dung
+
+\`\`\`js
+console.log("Forge it 🔥")
+\`\`\`
+`)
 
 const { Preview: previewDemo } = useConverter()
 const demoPreviewUrl = ref('')
 const demoError = ref('')
+const isDemoLoading = ref(false)
 
 const runDemoPreview = debounce(async () => {
-  if (!demoContent.value.trim()) {
+  const md = demoContent.value.trim()
+  if (!md) {
     if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
     demoPreviewUrl.value = ''
     demoError.value = ''
     return
   }
+  isDemoLoading.value = true
+  demoError.value = ''
   try {
-    // Chữ ký đúng: (content, theme, pageSize) → blob URL
-    const url = await previewDemo(demoContent.value, 'document', 'A4')
+    const url = await previewDemo(md, 'document', 'A4')
     if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
     demoPreviewUrl.value = url
-    demoError.value = ''
   } catch (e) {
-    demoError.value = e.message || 'Không tạo được bản xem trước'
+    demoError.value = e?.message || 'Không tạo được bản xem trước'
+    if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
+    demoPreviewUrl.value = ''
+  } finally {
+    isDemoLoading.value = false
   }
-}, 600)
+}, 500)
+
+watch(demoContent, () => runDemoPreview(), { immediate: true })
 
 onBeforeUnmount(() => {
   if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
 })
 
-// ----- Khung "kéo qua xem doc" — thay cho hiệu ứng nghiêng theo chuột cũ -----
-// Hiệu ứng cũ (xoay 3D theo mousemove, gọi anime() mỗi lần chuột di chuyển, không
-// throttle) là nguyên nhân làm trang cảm giác "lỏng"/giật: animation liên tục bị
-// interrupt bởi chính nó. Thay bằng một chức năng thật sự có ích — kéo để so sánh
-// Markdown gốc và bản PDF, dùng createDraggable của animejs v4 (vật lý mượt + spring
-// khi thả tay), lấy cảm hứng từ khung demo document kéo được trên forgedoc.com/product.
+// ----- Compare drag -----
 const compareFrameEl = ref(null)
 const handleEl = ref(null)
 const splitPercent = ref(55)
@@ -314,84 +368,108 @@ const mdLayerStyle = computed(() => ({
 
 function setupCompareDrag() {
   if (!handleEl.value || !compareFrameEl.value) return
+  compareDraggable?.revert?.()
 
   compareDraggable = createDraggable(handleEl.value, {
     container: compareFrameEl.value,
     x: true,
     y: false,
-    releaseEase: createSpring({ stiffness: 260, damping: 24 }),
-    onDrag: (d) => { splitPercent.value = clamp(d.progressX * 100, 2, 98) },
-    onUpdate: (d) => { splitPercent.value = clamp(d.progressX * 100, 2, 98) }
+    releaseEase: spring({ stiffness: 280, damping: 22 }),
+    onUpdate: (d) => {
+      const w = compareFrameEl.value?.offsetWidth || 1
+      let p
+      if (typeof d.progressX === 'number' && !Number.isNaN(d.progressX)) {
+        p = d.progressX
+      } else if (typeof d.x === 'number') {
+        p = d.x / w
+      } else {
+        return
+      }
+      splitPercent.value = clamp(p * 100, 3, 97)
+    }
   })
 
-  // Đặt vị trí ban đầu ở 55% chiều rộng khung (setX nhận px, không phải %)
   nextTick(() => {
-    const width = compareFrameEl.value?.offsetWidth || 0
-    compareDraggable?.setX(width * 0.55, true)
+    const w = compareFrameEl.value?.offsetWidth || 0
+    if (w > 0) compareDraggable?.setX(w * (splitPercent.value / 100), true)
   })
-}
-
-function clamp(n, min, max) {
-  return Math.min(max, Math.max(min, n))
-}
-
-// Cho phép kéo bằng bàn phím (accessibility) — mũi tên trái/phải chỉnh 4%/lần
-function onHandleKeydown(e) {
-  if (e.key === 'ArrowLeft') {
-    splitPercent.value = clamp(splitPercent.value - 4, 2, 98)
-    syncDraggableFromPercent()
-  } else if (e.key === 'ArrowRight') {
-    splitPercent.value = clamp(splitPercent.value + 4, 2, 98)
-    syncDraggableFromPercent()
-  }
 }
 
 function syncDraggableFromPercent() {
-  const width = compareFrameEl.value?.offsetWidth || 0
-  compareDraggable?.setX(width * (splitPercent.value / 100), true)
+  const w = compareFrameEl.value?.offsetWidth || 0
+  if (w > 0) compareDraggable?.setX(w * (splitPercent.value / 100), true)
+}
+
+function onHandleKeydown(e) {
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault()
+    splitPercent.value = clamp(splitPercent.value - 4, 3, 97)
+    syncDraggableFromPercent()
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault()
+    splitPercent.value = clamp(splitPercent.value + 4, 3, 97)
+    syncDraggableFromPercent()
+  }
 }
 
 function handleResize() {
   syncDraggableFromPercent()
 }
 
-// ----- Hiệu ứng nút bấm: nhấn hơi lún xuống bằng spring, cảm giác "đã" tay hơn -----
+// ----- Button micro-interaction -----
 function pressBtn(e) {
-  animate(e.currentTarget, { scale: 0.96, duration: 120, ease: 'outQuad' })
+  animate(e.currentTarget, { scale: 0.96, duration: 100, ease: 'outQuad' })
 }
 function releaseBtn(e) {
-  animate(e.currentTarget, { scale: 1, duration: 500, ease: createSpring({ stiffness: 300, damping: 14 }) })
+  animate(e.currentTarget, {
+    scale: 1,
+    duration: 480,
+    ease: spring({ stiffness: 320, damping: 16 })
+  })
 }
 
-// ----- Animation: hero vào trang theo timeline, các section dưới chỉ chạy khi cuộn tới -----
+// ----- Hero + scroll reveal -----
 let revealObserver = null
 
 function playHeroTimeline() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduce) {
+    document.querySelectorAll('.js-hero-badge, .js-hero-title, .js-hero-subtitle, .js-hero-actions .btn')
+      .forEach((el) => { el.style.opacity = '1' })
+    return
+  }
   createTimeline({ defaults: { ease: 'outExpo' } })
-    .add('.js-hero-badge', { opacity: [0, 1], translateY: [-12, 0], duration: 600 })
-    .add('.js-hero-title', { opacity: [0, 1], translateY: [30, 0], duration: 750, delay: stagger(120) }, '-=300')
-    .add('.js-hero-subtitle', { opacity: [0, 1], translateY: [16, 0], duration: 600 }, '-=400')
-    .add('.js-hero-actions .btn', { opacity: [0, 1], translateY: [16, 0], duration: 500, delay: stagger(100) }, '-=350')
+    .add('.js-hero-badge', { opacity: [0, 1], translateY: [-14, 0], duration: 560 })
+    .add('.js-hero-title', { opacity: [0, 1], translateY: [28, 0], duration: 700, delay: stagger(90) }, '-=280')
+    .add('.js-hero-subtitle', { opacity: [0, 1], translateY: [14, 0], duration: 560 }, '-=380')
+    .add('.js-hero-actions .btn', { opacity: [0, 1], translateY: [14, 0], duration: 480, delay: stagger(80) }, '-=320')
 }
 
 function setupScrollReveal() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const targets = document.querySelectorAll('.js-reveal')
-  revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return
-      const el = entry.target
-      const idx = Number(el.dataset.revealIndex || 0)
-      animate(el, {
-        opacity: [0, 1],
-        translateY: [32, 0],
-        duration: 700,
-        delay: idx * 90,
-        ease: 'outCubic'
+  if (reduce) {
+    targets.forEach((el) => { el.style.opacity = '1' })
+    return
+  }
+  revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        const el = entry.target
+        const idx = Number(el.dataset.revealIndex || 0)
+        animate(el, {
+          opacity: [0, 1],
+          translateY: [28, 0],
+          duration: 640,
+          delay: idx * 70,
+          ease: 'outCubic'
+        })
+        revealObserver.unobserve(el)
       })
-      revealObserver.unobserve(el)
-    })
-  }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' })
-
+    },
+    { threshold: 0.15, rootMargin: '0px 0px -36px 0px' }
+  )
   targets.forEach((el) => revealObserver.observe(el))
 }
 
@@ -399,7 +477,6 @@ onMounted(() => {
   playHeroTimeline()
   setupCompareDrag()
   window.addEventListener('resize', handleResize, { passive: true })
-  // setTimeout 0: v-for cần DOM render xong hết trước khi observe
   setTimeout(setupScrollReveal, 0)
 })
 
@@ -409,7 +486,6 @@ onBeforeUnmount(() => {
   compareDraggable?.revert?.()
 })
 
-// ----- Danh sách công cụ (hiện có + sắp ra mắt) -----
 const tools = ref([
   {
     icon: 'bi bi-file-earmark-pdf',
@@ -431,7 +507,7 @@ const tools = ref([
     icon: 'bi bi-mic',
     iconClass: 'bg-gradient-teal',
     title: 'Âm thanh → Văn bản',
-    description: 'Chuyển ghi âm thành transcript có dấu câu, có editor sửa & Find/Replace',
+    description: 'Chuyển ghi âm thành transcript có dấu câu, editor sửa & Find/Replace',
     status: 'available',
     to: '/convert/audio-to-text'
   },
@@ -446,7 +522,7 @@ const tools = ref([
     icon: 'bi bi-translate',
     iconClass: 'bg-gradient-ocean',
     title: 'Dịch transcript (AI)',
-    description: 'Dịch thoát nghĩa, tự nhiên theo ngữ cảnh — không dịch máy word-by-word',
+    description: 'Dịch thoát nghĩa, tự nhiên theo ngữ cảnh',
     status: 'soon'
   },
   {
@@ -458,7 +534,6 @@ const tools = ref([
   }
 ])
 
-// ----- Quy trình -----
 const processSteps = ref([
   {
     icon: 'bi bi-grid',
@@ -475,7 +550,7 @@ const processSteps = ref([
     description: 'Dán nội dung hoặc tải file lên, chọn theme/khổ giấy phù hợp'
   },
   {
-    icon: 'bi bi-file-earmark-pdf',
+    icon: 'bi bi-download',
     iconClass: 'bg-gradient-teal',
     colorClass: 'text-teal',
     title: 'Xem trước & Tải về',
@@ -485,11 +560,16 @@ const processSteps = ref([
 </script>
 
 <style scoped>
-/* Hero Section */
+.home-page {
+  overflow-x: hidden;
+}
+
+/* Hero — pure CSS mesh, no image assets */
 .hero-section {
   position: relative;
   overflow: hidden;
-  padding: 6rem 0 3rem;
+  padding: 5.5rem 0 3.5rem;
+  min-height: min(72vh, 640px);
   display: flex;
   align-items: center;
 }
@@ -498,87 +578,52 @@ const processSteps = ref([
   position: absolute;
   inset: 0;
   z-index: 0;
-}
-
-.hero-gradient {
-  position: absolute;
-  inset: 0;
-  background: var(--docforge-gradient-light);
-}
-
-.hero-pattern {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.12;
   pointer-events: none;
 }
 
-[data-theme="dark"] .hero-pattern {
-  opacity: 0.2;
-  filter: invert(1);
-}
-
-.floating-elements {
+.hero-mesh {
   position: absolute;
   inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
+  background: var(--docforge-mesh-light);
 }
 
-.floating-element {
+[data-theme="dark"] .hero-mesh {
+  background: var(--docforge-mesh-dark);
+}
+
+.hero-grid {
   position: absolute;
-  opacity: 0.35;
-  animation: float-shape 6s ease-in-out infinite;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 70%);
+  opacity: 0.7;
 }
-
-[data-theme="dark"] .floating-element {
-  opacity: 0.18;
-}
-
-@keyframes float-shape {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
-}
-
-.element-1 { width: 140px; top: 12%; left: 5%; animation-delay: 0s; }
-.element-2 { width: 110px; top: 62%; left: 14%; animation-delay: 1.5s; }
-.element-3 { width: 160px; top: 15%; right: 8%; animation-delay: 0.8s; }
-.element-4 { width: 120px; bottom: 8%; right: 6%; animation-delay: 2.2s; }
 
 .hero-content {
   position: relative;
   z-index: 1;
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
-}
-
-.hero-logo {
-  display: block;
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  margin: 0 auto 1.25rem;
 }
 
 .hero-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 20px;
+  padding: 8px 18px;
   border-radius: 999px;
   background: var(--docforge-white);
+  border: 1px solid var(--docforge-bdr-color);
   box-shadow: var(--docforge-shadow);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin-bottom: 1.5rem;
 }
 
-/* Trạng thái ẩn ban đầu cho các phần tử do animejs điều khiển — tránh nháy
-   nội dung đầy đủ trước khi timeline/observer kịp chạy. */
 .js-hero-badge,
 .js-hero-title,
 .js-hero-subtitle,
@@ -588,27 +633,40 @@ const processSteps = ref([
 }
 
 .hero-title {
-  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  font-size: clamp(2.1rem, 5vw, 3.15rem);
   font-weight: 800;
-  line-height: 1.15;
-  margin-bottom: 1.25rem;
+  line-height: 1.12;
+  margin-bottom: 1.15rem;
   display: flex;
   flex-direction: column;
+  gap: 0.15em;
+  letter-spacing: -0.03em;
+}
+
+.hero-title .title-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35em;
+  flex-wrap: wrap;
+}
+
+.hero-title .sep {
+  color: var(--docforge-gray-light);
+  font-weight: 400;
 }
 
 .hero-subtitle {
-  font-size: 1.125rem;
+  font-size: 1.1rem;
   color: var(--docforge-gray);
-  max-width: 620px;
+  max-width: 560px;
   margin-bottom: 2rem;
   line-height: 1.7;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .hero-actions {
   display: flex;
-  gap: 1rem;
+  gap: 0.85rem;
   flex-wrap: wrap;
 }
 
@@ -618,18 +676,17 @@ const processSteps = ref([
   gap: 8px;
 }
 
-/* Demo Section */
+/* Demo */
 .demo-card {
-  padding: 2rem;
-  border-radius: 24px;
+  padding: 1.75rem;
 }
 
 .demo-window-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
+  gap: 12px;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--docforge-bdr-color);
 }
 
@@ -639,10 +696,9 @@ const processSteps = ref([
 }
 
 .window-dots .dot {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  display: inline-block;
 }
 
 .dot-red { background: #ff5f57; }
@@ -656,37 +712,66 @@ const processSteps = ref([
   padding: 4px 12px;
   border-radius: 8px;
   background: var(--docforge-light);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--docforge-gray);
 }
 
+.window-status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--docforge-ocean);
+}
+
+.status-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--docforge-ocean);
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
 .demo-textarea-input {
-  margin-bottom: 1.25rem;
-  font-family: var(--docforge-font-two, monospace);
+  margin-bottom: 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
   resize: vertical;
-  background: #ffffff !important;
-  color: #1a1a1a !important;
+  min-height: 110px;
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #1e293b !important;
 }
 
 .demo-textarea-input::placeholder {
-  color: #9aa0a6;
+  color: #64748b;
 }
 
-/* Khung kéo so sánh */
 .demo-compare-frame {
-  height: 380px;
+  height: min(400px, 52vh);
   border: 1px solid var(--docforge-bdr-color);
+  box-shadow: var(--docforge-shadow);
 }
 
 .compare-layer-pdf {
   background: #ffffff;
+  z-index: 1;
 }
 
 .demo-preview-frame {
   width: 100%;
   height: 100%;
   border: 0;
+  background: #fff;
 }
 
 .demo-preview-placeholder {
@@ -695,26 +780,41 @@ const processSteps = ref([
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  color: var(--docforge-gray);
+  gap: 0.6rem;
+  color: #64748b;
   font-size: 14px;
   text-align: center;
   padding: 1rem;
+  background: #f8fafc;
 }
 
 .demo-preview-placeholder i {
   font-size: 2rem;
-  opacity: 0.5;
+  opacity: 0.55;
+}
+
+.placeholder-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #fd5523;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .compare-layer-md {
-  background: #0f172a;
+  background: #0b1220;
+  z-index: 2;
 }
 
 .compare-md-inner {
   width: 100%;
   height: 100%;
-  padding: 1.25rem;
+  padding: 1.15rem 1.25rem;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -724,18 +824,18 @@ const processSteps = ref([
   align-items: center;
   gap: 6px;
   color: #94a3b8;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
 .compare-md-source {
   color: #e2e8f0;
-  font-family: var(--docforge-font-two, monospace);
-  font-size: 13px;
-  line-height: 1.7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;
@@ -751,65 +851,74 @@ const processSteps = ref([
   font-weight: 800;
   letter-spacing: 0.5px;
   pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 .compare-tag-left {
   left: 12px;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   color: #e2e8f0;
 }
 
 .compare-tag-right {
   right: 12px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   color: #0f172a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-/* Tools Section */
-.tool-card {
-  padding: 2rem;
-  border-radius: 20px;
+/* Tools */
+.tools-section {
   position: relative;
+  background: var(--docforge-gradient-light);
+}
+
+.tool-card {
+  padding: 1.75rem;
   height: 100%;
   display: block;
   text-decoration: none;
   color: inherit;
+  position: relative;
 }
 
 .tool-card-soon {
-  opacity: 0.75;
+  opacity: 0.72;
   cursor: default;
+  pointer-events: none;
 }
 
 .tool-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  color: var(--docforge-white);
-  margin-bottom: 1.25rem;
+  font-size: 22px;
+  color: #fff;
+  margin-bottom: 1.1rem;
 }
 
 .tool-title {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .tool-description {
   color: var(--docforge-gray);
-  line-height: 1.6;
-  margin-bottom: 1rem;
+  line-height: 1.55;
+  margin-bottom: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .tool-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-weight: 600;
+  font-size: 12px;
 }
 
 .tool-badge-soon {
@@ -817,196 +926,137 @@ const processSteps = ref([
   color: var(--docforge-gray-dark);
 }
 
-/* Process Section */
+/* Process */
 .process-timeline {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  align-items: start;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.75rem;
 }
 
 .process-step {
   text-align: center;
-  position: relative;
+  padding: 1.5rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-white);
+  box-shadow: var(--docforge-shadow-sm);
 }
 
 .step-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--docforge-white);
-  border: 3px solid currentColor;
-  font-size: 1.5rem;
+  border: 2px solid currentColor;
+  font-size: 1.15rem;
   font-weight: 800;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 2;
+  margin-bottom: 0.85rem;
 }
 
 .step-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  color: var(--docforge-white);
-  margin: 0 auto 1.5rem;
-  position: relative;
-  z-index: 1;
+  font-size: 26px;
+  color: #fff;
+  margin: 0 auto 1rem;
 }
 
 .step-title {
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .step-description {
   color: var(--docforge-gray);
-  line-height: 1.6;
-  max-width: 280px;
+  line-height: 1.55;
+  max-width: 260px;
   margin: 0 auto;
+  font-size: 0.95rem;
 }
 
-.step-connector {
-  position: absolute;
-  top: 100px;
-  left: 50%;
-  width: 100%;
-  height: 2px;
-  background: var(--docforge-bdr-color);
-  transform: translateX(-50%);
-  z-index: 0;
+/* CTA */
+.cta-section {
+  background: transparent;
+  padding-bottom: 4rem !important;
 }
-
-/* CTA Section */
-.cta-section { background: var(--docforge-gradient-light); }
 
 .cta-card {
-  position: relative;
-  overflow: hidden;
-  padding: 3rem;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2.5rem;
 }
-
-.cta-bg-shape {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 260px;
-  opacity: 0.5;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.cta-card > .row { position: relative; z-index: 1; }
-
-.tools-section {
-  position: relative;
-  overflow: hidden;
-}
-
-.tools-bg-pattern {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 420px;
-  max-width: 60%;
-  opacity: 0.5;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.tools-section .container { position: relative; z-index: 1; }
-
-.process-section {
-  position: relative;
-  overflow: hidden;
-}
-
-.process-bg-map {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 900px;
-  max-width: 140%;
-  transform: translate(-50%, -50%);
-  opacity: 0.35;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.process-section .container { position: relative; z-index: 1; }
 
 .cta-title {
-  font-size: clamp(2rem, 4vw, 2.5rem);
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-size: clamp(1.65rem, 3.5vw, 2.25rem);
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
 }
 
 .cta-subtitle {
-  font-size: 1.125rem;
+  font-size: 1.05rem;
   color: var(--docforge-gray);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .cta-features {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .cta-feature {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   font-weight: 600;
-}
-
-.cta-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.cta-note {
-  font-size: 14px;
-  color: var(--docforge-gray);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-size: 0.95rem;
 }
 
 /* Responsive */
 @media (max-width: 991.98px) {
-  .tool-card { padding: 1.5rem; }
-  .process-timeline { grid-template-columns: 1fr; gap: 3rem; }
-  .step-connector { display: none; }
-  .cta-bg-shape, .tools-bg-pattern, .process-bg-map { display: none; }
+  .process-timeline {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 767.98px) {
-  .hero-actions { flex-direction: column; align-items: stretch; }
-  .demo-card { padding: 1.5rem; }
-  .cta-card { padding: 2rem; }
-  .cta-features { margin-bottom: 2rem; }
+  .hero-section {
+    padding: 4rem 0 2.5rem;
+    min-height: auto;
+  }
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .demo-card {
+    padding: 1.15rem;
+  }
+  .demo-compare-frame {
+    height: 280px;
+  }
+  .cta-card {
+    padding: 1.5rem;
+  }
+  .cta-features {
+    margin-bottom: 1.5rem;
+  }
 }
 
 @media (max-width: 575.98px) {
-  .hero-badge { font-size: 12px; padding: 6px 16px; }
-  .hero-subtitle { font-size: 1rem; }
-  .demo-compare-frame { height: 300px; }
-  .tool-card { padding: 1rem; }
-  .cta-card { padding: 1.5rem; }
+  .hero-badge {
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+  }
 }
 </style>

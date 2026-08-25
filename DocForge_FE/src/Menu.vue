@@ -248,9 +248,9 @@ function hideDropdown() {
 }
 
 .main-menu.scrolled {
-  box-shadow: var(--docforge-shadow-lg);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: var(--docforge-backdrop-blur-sm);
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .main-menu .container-fluid {
@@ -605,6 +605,10 @@ function hideDropdown() {
 [data-theme="dark"] .main-menu.scrolled {
   background: rgba(15, 23, 42, 0.92);
 }
+[data-theme="light"] .main-menu.scrolled {
+  background: rgba(255, 255, 255, 0.92);
+}
+
 
 [data-theme="dark"] .nav-link {
   color: var(--docforge-black);
