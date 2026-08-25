@@ -82,8 +82,6 @@
   --text-inverse: var(--docforge-white);
 }
 
-img { max-width: 100%; height: auto; display: block; }
-
 /* Dark Theme Variables */
 [data-theme="dark"] {
   /* Colors - Dark Mode Palette with Cool Tones */

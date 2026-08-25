@@ -2,19 +2,19 @@
   <Teleport to="body">
     <div class="toast-container">
       <div
-        v-for="toast in toasts"
-        :key="toast.id"
+        v-for="item in toastState.toasts"
+        :key="item.id"
         class="toast-item"
-        :class="[`toast-${toast.type}`, { 'toast-show': toast.show }]"
+        :class="[`toast-${item.type}`, { 'toast-show': item.show }]"
       >
         <div class="toast-icon">
-          <i :class="getIcon(toast.type)"></i>
+          <i :class="getIcon(item.type)"></i>
         </div>
         <div class="toast-content">
-          <div class="toast-title">{{ toast.title }}</div>
-          <div class="toast-message">{{ toast.message }}</div>
+          <div class="toast-title">{{ item.title }}</div>
+          <div class="toast-message">{{ item.message }}</div>
         </div>
-        <button class="toast-close" @click="removeToast(toast.id)">
+        <button class="toast-close" @click="toast.remove(item.id)">
           <i class="bi bi-x"></i>
         </button>
       </div>
@@ -23,9 +23,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+// ĐỔI: không còn dùng defineExpose + ref thủ công. Component này giờ chỉ ĐỌC
+// state từ singleton dùng chung (src/utils/toast.js) — nơi khác trong app (kể cả
+// file .js thuần như useMdToPdfConverter.js) gọi useToast().success(...) là tự
+// động hiện ở đây, không cần App.vue giữ ref rồi truyền tay xuống từng nơi.
+import { toastState, useToast } from '@/utils/toast'
 
-const toasts = ref([])
+const toast = useToast()
 
 const getIcon = (type) => {
   switch (type) {
@@ -41,47 +45,6 @@ const getIcon = (type) => {
       return 'bi bi-info-circle-fill'
   }
 }
-
-const addToast = (type, title, message, duration = 4000) => {
-  const id = Date.now() + Math.random()
-  const toast = {
-    id,
-    type,
-    title,
-    message,
-    show: false
-  }
-
-  toasts.value.push(toast)
-
-  // Trigger animation
-  setTimeout(() => {
-    toast.show = true
-  }, 100)
-
-  // Auto remove
-  setTimeout(() => {
-    removeToast(id)
-  }, duration)
-}
-
-const removeToast = (id) => {
-  const index = toasts.value.findIndex(toast => toast.id === id)
-  if (index > -1) {
-    toasts.value[index].show = false
-    setTimeout(() => {
-      toasts.value.splice(index, 1)
-    }, 300)
-  }
-}
-
-// Expose methods
-defineExpose({
-  success: (title, message, duration) => addToast('success', title, message, duration),
-  error: (title, message, duration) => addToast('error', title, message, duration),
-  warning: (title, message, duration) => addToast('warning', title, message, duration),
-  info: (title, message, duration) => addToast('info', title, message, duration)
-})
 </script>
 
 <style scoped>

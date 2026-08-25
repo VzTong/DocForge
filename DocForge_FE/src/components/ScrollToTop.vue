@@ -7,7 +7,7 @@
       :class="{ 'visible': showButton, 'pulse': shouldPulse }"
       title="Cuộn lên đầu trang"
     >
-      <div class="btn-bg bg-gradient-ocean"></div>
+      <div class="btn-bg"></div>
       <div class="btn-icon">
         <i class="bi bi-chevron-up"></i>
       </div>
@@ -19,6 +19,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
+// Trước đây ngưỡng là 300px khiến phải cuộn khá sâu mới thấy nút hiện lên.
+// Hạ xuống 120px để chỉ cần lăn nhẹ là thấy.
+const SHOW_THRESHOLD = 120
+
 const showButton = ref(false)
 const shouldPulse = ref(false)
 const scrollProgress = ref(0)
@@ -27,13 +31,13 @@ const handleScroll = () => {
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop
   const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
 
-  // Show button after scrolling 300px
-  showButton.value = scrollTop > 300
+  showButton.value = scrollTop > SHOW_THRESHOLD
 
-  // Calculate scroll progress
-  scrollProgress.value = (scrollTop / scrollHeight) * 100
+  // scrollHeight có thể <= 0 ở trang rất ngắn -> tránh chia cho 0/NaN
+  scrollProgress.value = scrollHeight > 0
+    ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100))
+    : 0
 
-  // Pulse effect when near bottom
   shouldPulse.value = scrollProgress.value > 90
 }
 
@@ -45,19 +49,22 @@ const scrollToTop = () => {
 }
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', handleScroll, { passive: true })
+  handleScroll()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleScroll)
 })
 </script>
 
 <style scoped>
 .scroll-to-top {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  right: 1.5rem;
   width: 56px;
   height: 56px;
   border: none;
@@ -66,16 +73,20 @@ onUnmounted(() => {
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transform: translateY(20px) scale(0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--shadow-lg);
+  /* Trước đây dùng var(--shadow-lg) / var(--ocean-blue-500).. -> các biến
+     này KHÔNG tồn tại trong theme.css (theme chỉ có biến tiền tố
+     --docforge-*), nên nút mất bóng đổ + nền gradient, nhìn như hỏng. */
+  box-shadow: var(--docforge-shadow-lg);
   overflow: hidden;
-  position: relative;
 }
 
 .scroll-to-top.visible {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
   transform: translateY(0) scale(1);
   animation: slideInUp 0.3s ease-out;
 }
@@ -86,16 +97,16 @@ onUnmounted(() => {
 
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--docforge-shadow-lg);
   }
   50% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), var(--shadow-lg);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), var(--docforge-shadow-lg);
   }
 }
 
 .scroll-to-top:hover {
   transform: translateY(0) scale(1.1);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--docforge-shadow-xl);
 }
 
 .scroll-to-top:active {
@@ -111,7 +122,7 @@ onUnmounted(() => {
   height: 100%;
   border-radius: 50%;
   z-index: 1;
-  background: linear-gradient(135deg, var(--ocean-blue-500) 0%, var(--ocean-blue-600) 100%);
+  background: var(--docforge-gradient-ocean);
 }
 
 /* Icon Layer */
@@ -150,8 +161,8 @@ onUnmounted(() => {
 /* Responsive design */
 @media (max-width: 768px) {
   .scroll-to-top {
-    bottom: 1.5rem;
-    right: 1.5rem;
+    bottom: max(1.25rem, env(safe-area-inset-bottom));
+    right: 1.25rem;
     width: 48px;
     height: 48px;
   }
@@ -163,8 +174,8 @@ onUnmounted(() => {
 
 @media (max-width: 480px) {
   .scroll-to-top {
-    bottom: 1rem;
-    right: 1rem;
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    right: 0.85rem;
     width: 44px;
     height: 44px;
   }

@@ -3,21 +3,29 @@ import Menu from "@/Menu.vue";
 import { Suspense } from "vue";
 import PageLoader from "@/components/PageLoader.vue";
 import ScrollToTop from "@/components/ScrollToTop.vue";
+import ToastNotification from "@/components/ToastNotification.vue";
 </script>
 
 <template>
   <div>
     <PageLoader />
     <ScrollToTop />
+    <!-- Toast dùng chung toàn app — mount 1 lần ở đây, gọi bằng useToast() ở bất
+         kỳ đâu (xem src/utils/toast.js), không cần truyền ref xuống từng nơi. -->
+    <ToastNotification />
 
     <div id="app" class="app-container">
-      <!-- Navigation -->
+      <!-- Navigation (fixed) -->
       <Menu />
 
       <!-- Nội dung trang động -->
       <main class="main-content">
         <Suspense>
-          <RouterView />
+          <RouterView v-slot="{ Component }">
+            <transition name="page-fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </RouterView>
         </Suspense>
       </main>
     </div>
@@ -28,88 +36,103 @@ import ScrollToTop from "@/components/ScrollToTop.vue";
 /* Modern App Container */
 .app-container {
   min-height: 100vh;
-  background: var(--carrental-white);
-  transition: var(--carrental-transition);
+  background: var(--docforge-white);
+  transition: var(--docforge-transition);
   position: relative;
-  overflow-x: hidden;
 }
 
 .main-content {
   position: relative;
   z-index: 1;
+  overflow-x: hidden;
+  /* Menu giờ là position:fixed (không còn chiếm chỗ trong flow), nên bù
+     lại đúng bằng chiều cao nav để nội dung không bị đè lên — biến này
+     định nghĩa trong theme-patch.css. */
+  padding-top: var(--docforge-nav-height, 84px);
+}
+
+/* Chuyển trang nhẹ nhàng, không giật cục khi đổi route */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
 }
 
 /* Enhanced Global Button Styles */
 .btn-primary {
-  background: var(--carrental-gradient-primary) !important;
+  background: var(--docforge-gradient-primary) !important;
   border: none !important;
-  color: var(--carrental-white) !important;
-  box-shadow: var(--carrental-shadow) !important;
-  transition: var(--carrental-transition) !important;
+  color: var(--docforge-white) !important;
+  box-shadow: var(--docforge-shadow) !important;
+  transition: var(--docforge-transition) !important;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px) !important;
-  box-shadow: var(--carrental-shadow-lg) !important;
-  color: var(--carrental-white) !important;
+  box-shadow: var(--docforge-shadow-lg) !important;
+  color: var(--docforge-white) !important;
 }
 
 .btn-outline-primary {
-  border: 2px solid var(--carrental-base) !important;
-  color: var(--carrental-base) !important;
+  border: 2px solid var(--docforge-base) !important;
+  color: var(--docforge-base) !important;
   background: transparent !important;
-  transition: var(--carrental-transition) !important;
+  transition: var(--docforge-transition) !important;
 }
 
 .btn-outline-primary:hover {
-  background: var(--carrental-base) !important;
-  color: var(--carrental-white) !important;
+  background: var(--docforge-base) !important;
+  color: var(--docforge-white) !important;
   transform: translateY(-2px) !important;
 }
 
 .btn-ocean {
-  background: var(--carrental-gradient-ocean) !important;
+  background: var(--docforge-gradient-ocean) !important;
   border: none !important;
-  color: var(--carrental-white) !important;
-  box-shadow: var(--carrental-shadow) !important;
+  color: var(--docforge-white) !important;
+  box-shadow: var(--docforge-shadow) !important;
 }
 
 .btn-ocean:hover {
   transform: translateY(-2px) !important;
-  box-shadow: var(--carrental-shadow-lg) !important;
-  color: var(--carrental-white) !important;
+  box-shadow: var(--docforge-shadow-lg) !important;
+  color: var(--docforge-white) !important;
 }
 
 .btn-outline-ocean {
-  border: 2px solid var(--carrental-ocean) !important;
-  color: var(--carrental-ocean) !important;
+  border: 2px solid var(--docforge-ocean) !important;
+  color: var(--docforge-ocean) !important;
   background: transparent !important;
 }
 
 .btn-outline-ocean:hover {
-  background: var(--carrental-ocean) !important;
-  color: var(--carrental-white) !important;
+  background: var(--docforge-ocean) !important;
+  color: var(--docforge-white) !important;
   transform: translateY(-2px) !important;
 }
 
 /* Enhanced Text Colors */
 .text-primary {
-  color: var(--carrental-base) !important;
+  color: var(--docforge-base) !important;
 }
 
 .text-ocean {
-  color: var(--carrental-ocean) !important;
+  color: var(--docforge-ocean) !important;
 }
 
 .text-gradient-primary {
-  background: var(--carrental-gradient-primary);
+  background: var(--docforge-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-ocean {
-  background: var(--carrental-gradient-ocean);
+  background: var(--docforge-gradient-ocean);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -117,36 +140,31 @@ import ScrollToTop from "@/components/ScrollToTop.vue";
 
 /* Modern Card Styles */
 .card {
-  border: 1px solid var(--carrental-bdr-color) !important;
-  border-radius: var(--carrental-bdr-radius) !important;
-  box-shadow: var(--carrental-shadow) !important;
-  transition: var(--carrental-transition) !important;
-  background: var(--carrental-white) !important;
+  border: 1px solid var(--docforge-bdr-color) !important;
+  border-radius: var(--docforge-bdr-radius) !important;
+  box-shadow: var(--docforge-shadow) !important;
+  transition: var(--docforge-transition) !important;
+  background: var(--docforge-white) !important;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--carrental-shadow-lg) !important;
+  box-shadow: var(--docforge-shadow-lg) !important;
 }
 
 /* Modern Form Inputs */
 .form-control {
-  border: 2px solid var(--carrental-bdr-color) !important;
-  border-radius: var(--carrental-bdr-radius) !important;
+  border: 2px solid var(--docforge-bdr-color) !important;
+  border-radius: var(--docforge-bdr-radius) !important;
   padding: 12px 16px !important;
-  transition: var(--carrental-transition) !important;
-  background: var(--carrental-white) !important;
+  transition: var(--docforge-transition) !important;
+  background: var(--docforge-white) !important;
 }
 
 .form-control:focus {
-  border-color: var(--carrental-ocean-light) !important;
+  border-color: var(--docforge-ocean-light) !important;
   box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25) !important;
   outline: none !important;
-}
-
-/* Navbar Brand Enhancement */
-.navbar-brand .text-primary {
-  color: var(--carrental-base) !important;
 }
 
 /* Container Improvements */
@@ -154,34 +172,8 @@ import ScrollToTop from "@/components/ScrollToTop.vue";
   background: transparent !important;
 }
 
-/* Modern Loading States */
-.loading {
-  position: relative;
-  overflow: hidden;
-}
-
-.loading::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-
 /* Responsive Enhancements */
 @media (max-width: 768px) {
-  .main-content {
-    padding-top: 0;
-  }
-
   .btn {
     padding: 10px 24px !important;
     font-size: 14px !important;
@@ -190,17 +182,17 @@ import ScrollToTop from "@/components/ScrollToTop.vue";
 
 /* Dark Mode Support */
 [data-theme="dark"] .app-container {
-  background: var(--carrental-white);
+  background: var(--docforge-white);
 }
 
 [data-theme="dark"] .card {
-  background: var(--carrental-white) !important;
-  border-color: var(--carrental-bdr-color) !important;
+  background: var(--docforge-white) !important;
+  border-color: var(--docforge-bdr-color) !important;
 }
 
 [data-theme="dark"] .form-control {
-  background: var(--carrental-white) !important;
-  border-color: var(--carrental-bdr-color) !important;
-  color: var(--carrental-black) !important;
+  background: var(--docforge-white) !important;
+  border-color: var(--docforge-bdr-color) !important;
+  color: var(--docforge-black) !important;
 }
 </style>

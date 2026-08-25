@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
+from app.api.transcription_routes import router as transcription_router
 from app.core.config import settings
 from app.core.exception_handler import register_exception_handlers
 
@@ -27,7 +28,7 @@ app.add_middleware(
 register_exception_handlers(app)
 
 app.include_router(api_router)
-
+app.include_router(transcription_router)
 @app.get("/")
 async def root() -> dict:
     """Root endpoint."""

@@ -15,34 +15,36 @@ const routes = [
     {
         path: "/convert/md-to-pdf",
         name: "convert.md-to-pdf",
-        component: () => import("./pages/client/ConvertPage.vue"),
+        component: () => import("./pages/client/Mdtopdf.vue"),
     },
-    // Thêm route khi từng công cụ được xây dựng — mỗi công cụ 1 page riêng,
-    // dùng composable riêng theo khuôn useMdToPdfConverter() trong useApi.js.
-    // {
-    //     path: "/convert/pdf-to-word",
-    //     name: "convert.pdf-to-word",
-    //     component: () => import("./pages/client/PdfToWordPage.vue"),
-    // },
-    // {
-    //     path: "/convert/pdf-to-md",
-    //     name: "convert.pdf-to-md",
-    //     component: () => import("./pages/client/PdfToMdPage.vue"),
-    // },
+    {
+        path: "/convert/pdf-to-docx",
+        name: "convert.pdf-to-docx",
+        component: () => import("./pages/client/PdftodocxPage.vue"),
+    },
+    // Còn lại: Word -> PDF (sắp làm), Audio -> Text, Video -> Text, Dịch
+    // transcript bằng AI — thêm route khi từng cái được xây dựng, theo
+    // khuôn 2 route phía trên (1 page riêng + 1 composable riêng trong
+    // useApi.js theo khuôn useMdToPdfConverter() / usePdfToDocxConverter()).
+    {
+        path: "/convert/audio-to-text",
+        name: "convert.audio-to-text",
+        component: () => import("./pages/client/TranscriptEditorPage.vue"),
+    },
     // {
     //     path: "/convert/word-to-pdf",
     //     name: "convert.word-to-pdf",
     //     component: () => import("./pages/client/WordToPdfPage.vue"),
     // },
     // {
-    //     path: "/convert/word-to-md",
-    //     name: "convert.word-to-md",
-    //     component: () => import("./pages/client/WordToMdPage.vue"),
+    //     path: "/convert/video-to-text",
+    //     name: "convert.video-to-text",
+    //     component: () => import("./pages/client/VideoToTextPage.vue"),
     // },
     // {
-    //     path: "/convert/txt-to-md",
-    //     name: "convert.txt-to-md",
-    //     component: () => import("./pages/client/TxtToMdPage.vue"),
+    //     path: "/convert/translate-transcript",
+    //     name: "convert.translate-transcript",
+    //     component: () => import("./pages/client/TranslateTranscriptPage.vue"),
     // },
 
     // {

@@ -1,0 +1,106 @@
+/* ============================================================
+   theme-patch.css
+   File PHỤ, KHÔNG thay thế theme.css — import file này NGAY SAU
+   theme.css trong main.js:
+
+     import "./assets/css/theme.css";
+     import "./assets/css/theme-patch.css";
+
+   Lý do tách riêng: theme.css hiện đang rất dài (1200+ dòng) và
+   mình chưa xem hết toàn bộ nội dung, nên thay vì viết đè cả file
+   (rủi ro làm mất rule bạn đã có), mình gom các fix còn thiếu vào
+   đây cho an toàn. Sau này rảnh có thể gộp thẳng vào theme.css.
+   ============================================================ */
+
+/* --- 1. Biến chiều cao nav dùng chung (Menu.vue đổi sang position:fixed
+   nên cần biến này để App.vue bù padding-top, tránh nội dung bị nav đè lên) --- */
+:root {
+  --docforge-nav-height: 84px;
+}
+
+@media (max-width: 767.98px) {
+  :root {
+    --docforge-nav-height: 68px;
+  }
+}
+
+/* --- 2. Fix "lỗi ảnh do kích thước không tương ứng" ---
+   Nguyên nhân: nhiều <img> (nhất là ảnh trang trí/pattern lấy từ kho ảnh
+   gốc cỡ 1920x816...) không có class riêng quy định kích thước, nên trình
+   duyệt hiển thị đúng NGUYÊN kích thước file gốc -> phá layout, tràn ngang.
+   Reset an toàn: ảnh không bao giờ vượt quá khung chứa, tự giữ tỉ lệ. */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Ảnh cố tình absolute/full-bleed (banner, shape trang trí...) đã có
+   width/height riêng trong style scoped của từng component nên sẽ override
+   đúng rule trên, không bị ảnh hưởng. */
+
+/* --- 3. Compare-slider (khung "kéo qua xem doc" ở Home) dùng chung --- */
+.compare-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.compare-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.compare-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 100%;
+  margin-left: -22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  touch-action: none;
+}
+
+.compare-handle-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  transform: translateX(-50%);
+  background: var(--docforge-white);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), var(--docforge-shadow);
+  pointer-events: none;
+}
+
+.compare-handle-grip {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--docforge-gradient-primary);
+  color: var(--docforge-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: var(--docforge-shadow-lg);
+  cursor: grab;
+}
+
+.compare-handle:active .compare-handle-grip {
+  cursor: grabbing;
+}
+
+/* Focus ring cho accessibility khi kéo bằng bàn phím (arrow keys) */
+.compare-handle:focus-visible .compare-handle-grip {
+  outline: 2px solid var(--docforge-ocean-light);
+  outline-offset: 3px;
+}

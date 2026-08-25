@@ -4,9 +4,11 @@
     <section class="hero-section">
       <div class="hero-bg">
         <div class="hero-gradient"></div>
+        <!-- Ảnh chấm bi từ kho hình-->
         <img src="/images/shapes/banner-two-pattern.png" alt="" class="hero-pattern" />
       </div>
 
+      <!-- Ảnh trang trí từ kho hình-->
       <div class="floating-elements">
         <img src="/images/shapes/about-two-shape-1.png" alt="" class="floating-element element-1" />
         <img src="/images/shapes/about-two-shape-2.png" alt="" class="floating-element element-2" />
@@ -16,7 +18,6 @@
 
       <div class="container">
         <div class="hero-content text-center">
-          <img src="/favicon.ico" alt="DocForge" class="hero-logo js-hero-badge" />
           <div class="hero-badge js-hero-badge">
             <i class="bi bi-stars text-ocean"></i>
             <span>Bộ công cụ chuyển đổi tài liệu</span>
@@ -35,7 +36,7 @@
           </p>
 
           <div class="hero-actions js-hero-actions justify-content-center">
-            <router-link to="/convert/md-to-pdf" class="btn btn-ocean btn-lg hover-lift" @mousedown="pressBtn" @mouseup="releaseBtn" @mouseleave="releaseBtn">
+            <router-link to="/convert" class="btn btn-ocean btn-lg hover-lift">
               <i class="bi bi-file-earmark-arrow-down"></i>
               <span>Dùng Markdown → PDF ngay</span>
               <i class="bi bi-arrow-right"></i>
@@ -49,7 +50,7 @@
       </div>
     </section>
 
-    <!-- Live demo: khung "kéo qua xem doc" (lấy cảm hứng từ forgedoc.com/product) -->
+    <!-- Live demo: split view -->
     <section class="demo-section py-5">
       <div class="container">
         <div class="text-center mb-4">
@@ -59,69 +60,41 @@
           </div>
           <h2 class="section-title js-reveal">
             Gõ <span class="text-gradient-primary">Markdown</span>,
-            kéo để xem <span class="text-gradient-ocean">PDF</span> hiện ra
+            xem <span class="text-gradient-ocean">PDF</span> ngay lập tức
           </h2>
-          <p class="section-subtitle js-reveal">
-            Kéo thanh chia đôi để so sánh nội dung gốc và bản xem trước — y hệt trải nghiệm gõ và thấy ngay
-          </p>
         </div>
 
         <div class="demo-card card-glass">
-          <div class="demo-window-bar">
-            <div class="window-dots">
-              <span class="dot dot-red"></span>
-              <span class="dot dot-yellow"></span>
-              <span class="dot dot-green"></span>
+          <div class="demo-split">
+            <div class="demo-pane">
+              <label class="form-label">
+                <i class="bi bi-pencil-square text-primary"></i>
+                Markdown
+              </label>
+              <textarea
+                v-model="demoContent"
+                class="form-control demo-textarea"
+                rows="8"
+                placeholder="# Xin chào&#10;&#10;Đây là **Markdown** của bạn..."
+              ></textarea>
             </div>
-            <div class="window-tab">
-              <i class="bi bi-markdown"></i>
-              document.md
+            <div class="demo-pane">
+              <label class="form-label">
+                <i class="bi bi-eye text-ocean"></i>
+                Xem trước PDF
+              </label>
+              <div class="demo-preview" ref="demoPreviewEl">
+                <iframe v-if="demoPreviewUrl" :src="demoPreviewUrl" class="demo-preview-frame" title="Xem trước"></iframe>
+                <div v-else class="demo-preview-placeholder">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <span>{{ demoError ? demoError : 'Bản xem trước sẽ hiện ở đây' }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <textarea
-            v-model="demoContent"
-            class="form-control demo-textarea-input"
-            rows="4"
-            placeholder="# Xin chào&#10;&#10;Đây là **Markdown** của bạn..."
-          ></textarea>
-
-          <div class="compare-frame demo-compare-frame" ref="compareFrameEl">
-            <!-- Lớp dưới: bản xem trước PDF, luôn phủ full khung -->
-            <div class="compare-layer compare-layer-pdf">
-              <!-- <iframe v-if="demoPreviewHtml" :srcdoc="demoPreviewHtml" class="demo-preview-frame" title="Xem trước PDF"></iframe> -->
-              <iframe
-                  v-if="demoPreviewUrl"
-                  :src="demoPreviewUrl"
-                  class="demo-preview-frame"
-                  title="Xem trước PDF"
-              ></iframe>
-              <div v-else class="demo-preview-placeholder">
-                <i class="bi bi-file-earmark-pdf"></i>
-                <span>{{ demoError ? demoError : 'Gõ Markdown ở trên để xem bản PDF' }}</span>
-              </div>
-            </div>
-
-            <!-- Lớp trên: mã Markdown gốc, bị clip theo % kéo -->
-            <div class="compare-layer compare-layer-md" :style="mdLayerStyle">
-              <div class="compare-md-inner">
-                <div class="compare-md-label"><i class="bi bi-markdown"></i> Markdown gốc</div>
-                <pre class="compare-md-source">{{ demoContent }}</pre>
-              </div>
-            </div>
-
-            <!-- Tay kéo -->
-            <div class="compare-handle" ref="handleEl" tabindex="0" @keydown="onHandleKeydown" aria-label="Kéo để so sánh Markdown và PDF">
-              <span class="compare-handle-line"></span>
-              <span class="compare-handle-grip"><i class="bi bi-arrow-left-right"></i></span>
-            </div>
-
-            <span class="compare-tag compare-tag-left">MD</span>
-            <span class="compare-tag compare-tag-right">PDF</span>
-          </div>
-
-          <div class="text-center mt-4">
-            <router-link to="/convert/md-to-pdf" class="btn btn-primary hover-lift">
+          <div class="text-center mt-3">
+            <router-link to="/convert" class="btn btn-primary hover-lift">
               <span>Mở trang chuyển đổi đầy đủ</span>
               <i class="bi bi-arrow-right"></i>
             </router-link>
@@ -143,7 +116,7 @@
             Một nền tảng, <span class="text-gradient-primary">nhiều định dạng</span>
           </h2>
           <p class="section-subtitle js-reveal">
-            Markdown → PDF và PDF → Word đã sẵn sàng, các công cụ còn lại đang được xây dựng
+            Markdown → PDF đã sẵn sàng, các công cụ còn lại đang được xây dựng
           </p>
         </div>
 
@@ -239,7 +212,7 @@
             </div>
             <div class="col-lg-4 text-center">
               <div class="cta-actions">
-                <router-link to="/convert/md-to-pdf" class="btn btn-primary btn-xl hover-lift mb-3">
+                <router-link to="/convert" class="btn btn-primary btn-xl hover-lift mb-3">
                   <i class="bi bi-file-earmark-arrow-down"></i>
                   <span>Chuyển đổi ngay</span>
                 </router-link>
@@ -257,10 +230,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { animate, createTimeline, stagger, createSpring, createDraggable } from 'animejs'
-import { useConverter } from '@/composables/useMdToPdfConverter'
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import anime from 'animejs'
+import { useMdToPdfConverter } from '@/composables/useApi'
 
+// LƯU Ý: đây chính là lỗi làm trang trắng — '@/utils/helpers' không tồn tại
+// trong project nên Vite fail resolve, cả component Home.vue sập theo.
+// Nếu bạn đã có sẵn hàm debounce dùng chung ở nơi khác, import từ đó thay vì
+// định nghĩa lại ở đây — chỉ cần đúng đường dẫn thật.
 function debounce(fn, wait = 300) {
   let timeout
   return (...args) => {
@@ -269,109 +246,81 @@ function debounce(fn, wait = 300) {
   }
 }
 
-// ----- Demo trực tiếp: gõ Markdown ở trên, kéo thanh chia để so sánh với PDF -----
-
-const { Preview: previewDemo } = useConverter()
+// ----- Demo trực tiếp: gõ Markdown bên trái, xem PDF bên phải -----
+const demoContent = ref('# Xin chào từ DocForge\n\nGõ **Markdown** ở đây để xem PDF cập nhật ngay bên phải.')
 const demoPreviewUrl = ref('')
 const demoError = ref('')
+const demoPreviewEl = ref(null)
+
+const { Preview: previewDemo } = useMdToPdfConverter()
 
 const runDemoPreview = debounce(async () => {
   if (!demoContent.value.trim()) {
-    if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
-    demoPreviewUrl.value = ''
     demoError.value = ''
     return
   }
   try {
-    // Chữ ký đúng: (content, theme, pageSize) → blob URL
     const url = await previewDemo(demoContent.value, 'document', 'A4')
     if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
     demoPreviewUrl.value = url
     demoError.value = ''
+    // Nhấn nhẹ khung preview mỗi lần có bản mới, để người dùng biết là nó
+    // vừa cập nhật thật (realtime) chứ không phải đứng yên.
+    nextTick(() => {
+      if (demoPreviewEl.value) {
+        anime({
+          targets: demoPreviewEl.value,
+          scale: [0.97, 1],
+          duration: 420,
+          easing: 'easeOutBack'
+        })
+      }
+    })
   } catch (e) {
     demoError.value = e.message || 'Không tạo được bản xem trước'
+    console.error('[Home demo] preview lỗi:', e)
   }
 }, 600)
 
+watch(demoContent, runDemoPreview, { immediate: true })
+
 onBeforeUnmount(() => {
   if (demoPreviewUrl.value) URL.revokeObjectURL(demoPreviewUrl.value)
+  if (revealObserver) revealObserver.disconnect()
 })
 
-// ----- Khung "kéo qua xem doc" — thay cho hiệu ứng nghiêng theo chuột cũ -----
-// Hiệu ứng cũ (xoay 3D theo mousemove, gọi anime() mỗi lần chuột di chuyển, không
-// throttle) là nguyên nhân làm trang cảm giác "lỏng"/giật: animation liên tục bị
-// interrupt bởi chính nó. Thay bằng một chức năng thật sự có ích — kéo để so sánh
-// Markdown gốc và bản PDF, dùng createDraggable của animejs v4 (vật lý mượt + spring
-// khi thả tay), lấy cảm hứng từ khung demo document kéo được trên forgedoc.com/product.
-const compareFrameEl = ref(null)
-const handleEl = ref(null)
-const splitPercent = ref(55)
-let compareDraggable = null
-
-const mdLayerStyle = computed(() => ({
-  clipPath: `inset(0 ${100 - splitPercent.value}% 0 0)`
-}))
-
-function setupCompareDrag() {
-  if (!handleEl.value || !compareFrameEl.value) return
-
-  compareDraggable = createDraggable(handleEl.value, {
-    container: compareFrameEl.value,
-    x: true,
-    y: false,
-    releaseEase: createSpring({ stiffness: 260, damping: 24 }),
-    onDrag: (d) => { splitPercent.value = clamp(d.progressX * 100, 2, 98) },
-    onUpdate: (d) => { splitPercent.value = clamp(d.progressX * 100, 2, 98) }
-  })
-
-  // Đặt vị trí ban đầu ở 55% chiều rộng khung (setX nhận px, không phải %)
-  nextTick(() => {
-    const width = compareFrameEl.value?.offsetWidth || 0
-    compareDraggable?.setX(width * 0.55, true)
-  })
-}
-
-function clamp(n, min, max) {
-  return Math.min(max, Math.max(min, n))
-}
-
-// Cho phép kéo bằng bàn phím (accessibility) — mũi tên trái/phải chỉnh 4%/lần
-function onHandleKeydown(e) {
-  if (e.key === 'ArrowLeft') {
-    splitPercent.value = clamp(splitPercent.value - 4, 2, 98)
-    syncDraggableFromPercent()
-  } else if (e.key === 'ArrowRight') {
-    splitPercent.value = clamp(splitPercent.value + 4, 2, 98)
-    syncDraggableFromPercent()
-  }
-}
-
-function syncDraggableFromPercent() {
-  const width = compareFrameEl.value?.offsetWidth || 0
-  compareDraggable?.setX(width * (splitPercent.value / 100), true)
-}
-
-function handleResize() {
-  syncDraggableFromPercent()
-}
-
-// ----- Hiệu ứng nút bấm: nhấn hơi lún xuống bằng spring, cảm giác "đã" tay hơn -----
-function pressBtn(e) {
-  animate(e.currentTarget, { scale: 0.96, duration: 120, ease: 'outQuad' })
-}
-function releaseBtn(e) {
-  animate(e.currentTarget, { scale: 1, duration: 500, ease: createSpring({ stiffness: 300, damping: 14 }) })
-}
-
-// ----- Animation: hero vào trang theo timeline, các section dưới chỉ chạy khi cuộn tới -----
+// ----- Animation: hero vào trang theo timeline, các section dưới chỉ chạy
+// khi cuộn tới (không lãng phí animation lúc còn ngoài màn hình) -----
 let revealObserver = null
 
 function playHeroTimeline() {
-  createTimeline({ defaults: { ease: 'outExpo' } })
-    .add('.js-hero-badge', { opacity: [0, 1], translateY: [-12, 0], duration: 600 })
-    .add('.js-hero-title', { opacity: [0, 1], translateY: [30, 0], duration: 750, delay: stagger(120) }, '-=300')
-    .add('.js-hero-subtitle', { opacity: [0, 1], translateY: [16, 0], duration: 600 }, '-=400')
-    .add('.js-hero-actions .btn', { opacity: [0, 1], translateY: [16, 0], duration: 500, delay: stagger(100) }, '-=350')
+  const tl = anime.timeline({ easing: 'easeOutExpo' })
+  tl.add({
+    targets: '.js-hero-badge',
+    opacity: [0, 1],
+    translateY: [-12, 0],
+    duration: 600
+  })
+    .add({
+      targets: '.js-hero-title',
+      opacity: [0, 1],
+      translateY: [30, 0],
+      duration: 750,
+      delay: anime.stagger(120)
+    }, '-=300')
+    .add({
+      targets: '.js-hero-subtitle',
+      opacity: [0, 1],
+      translateY: [16, 0],
+      duration: 600
+    }, '-=400')
+    .add({
+      targets: '.js-hero-actions .btn',
+      opacity: [0, 1],
+      translateY: [16, 0],
+      duration: 500,
+      delay: anime.stagger(100)
+    }, '-=350')
 }
 
 function setupScrollReveal() {
@@ -381,12 +330,13 @@ function setupScrollReveal() {
       if (!entry.isIntersecting) return
       const el = entry.target
       const idx = Number(el.dataset.revealIndex || 0)
-      animate(el, {
+      anime({
+        targets: el,
         opacity: [0, 1],
         translateY: [32, 0],
         duration: 700,
         delay: idx * 90,
-        ease: 'outCubic'
+        easing: 'easeOutCubic'
       })
       revealObserver.unobserve(el)
     })
@@ -397,16 +347,9 @@ function setupScrollReveal() {
 
 onMounted(() => {
   playHeroTimeline()
-  setupCompareDrag()
-  window.addEventListener('resize', handleResize, { passive: true })
-  // setTimeout 0: v-for cần DOM render xong hết trước khi observe
+  // nextTick không đủ vì v-for render list card/step cần DOM đã có mặt
+  // đầy đủ; setTimeout 0 đảm bảo chạy sau khi Vue mount xong toàn bộ cây.
   setTimeout(setupScrollReveal, 0)
-})
-
-onBeforeUnmount(() => {
-  if (revealObserver) revealObserver.disconnect()
-  window.removeEventListener('resize', handleResize)
-  compareDraggable?.revert?.()
 })
 
 // ----- Danh sách công cụ (hiện có + sắp ra mắt) -----
@@ -417,36 +360,34 @@ const tools = ref([
     title: 'Markdown → PDF',
     description: 'Chuyển file hoặc nội dung Markdown thành PDF với nhiều theme, xem trước tức thì',
     status: 'available',
-    to: '/convert/md-to-pdf'
+    to: '/convert'
   },
   {
     icon: 'bi bi-file-earmark-word',
     iconClass: 'bg-gradient-ocean',
     title: 'PDF → Word',
     description: 'Trích xuất nội dung PDF sang file Word có thể chỉnh sửa',
-    status: 'available',
-    to: '/convert/pdf-to-docx'
-  },
-  {
-    icon: 'bi bi-mic',
-    iconClass: 'bg-gradient-teal',
-    title: 'Âm thanh → Văn bản',
-    description: 'Chuyển ghi âm thành transcript có dấu câu, có editor sửa & Find/Replace',
-    status: 'available',
-    to: '/convert/audio-to-text'
-  },
-  {
-    icon: 'bi bi-camera-video',
-    iconClass: 'bg-gradient-primary',
-    title: 'Video → Transcript',
-    description: 'Tách âm thanh từ video rồi chuyển thành văn bản',
     status: 'soon'
   },
   {
-    icon: 'bi bi-translate',
+    icon: 'bi bi-markdown',
+    iconClass: 'bg-gradient-teal',
+    title: 'PDF → Markdown',
+    description: 'Chuyển PDF về Markdown gọn nhẹ, dễ chỉnh sửa và lưu trữ',
+    status: 'soon'
+  },
+  {
+    icon: 'bi bi-file-earmark-pdf',
+    iconClass: 'bg-gradient-primary',
+    title: 'Word → PDF',
+    description: 'Xuất tài liệu Word sang PDF giữ nguyên định dạng',
+    status: 'soon'
+  },
+  {
+    icon: 'bi bi-markdown',
     iconClass: 'bg-gradient-ocean',
-    title: 'Dịch transcript (AI)',
-    description: 'Dịch thoát nghĩa, tự nhiên theo ngữ cảnh — không dịch máy word-by-word',
+    title: 'Word → Markdown',
+    description: 'Chuyển tài liệu Word sang Markdown để dễ đưa vào wiki, blog',
     status: 'soon'
   },
   {
@@ -556,14 +497,6 @@ const processSteps = ref([
   margin: 0 auto;
 }
 
-.hero-logo {
-  display: block;
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  margin: 0 auto 1.25rem;
-}
-
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -577,8 +510,8 @@ const processSteps = ref([
   margin-bottom: 1.5rem;
 }
 
-/* Trạng thái ẩn ban đầu cho các phần tử do animejs điều khiển — tránh nháy
-   nội dung đầy đủ trước khi timeline/observer kịp chạy. */
+/* Trạng thái ẩn ban đầu cho các phần tử do anime.js điều khiển — tránh
+   nháy (flash) nội dung đầy đủ trước khi timeline/observer kịp chạy. */
 .js-hero-badge,
 .js-hero-title,
 .js-hero-subtitle,
@@ -602,8 +535,6 @@ const processSteps = ref([
   max-width: 620px;
   margin-bottom: 2rem;
   line-height: 1.7;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .hero-actions {
@@ -624,62 +555,40 @@ const processSteps = ref([
   border-radius: 24px;
 }
 
-.demo-window-bar {
+.demo-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.demo-pane .form-label {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--docforge-bdr-color);
-}
-
-.window-dots {
-  display: flex;
   gap: 6px;
-}
-
-.window-dots .dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.dot-red { background: #ff5f57; }
-.dot-yellow { background: #febc2e; }
-.dot-green { background: #28c840; }
-
-.window-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 8px;
-  background: var(--docforge-light);
-  font-size: 13px;
   font-weight: 600;
-  color: var(--docforge-gray);
+  margin-bottom: 0.5rem;
 }
 
-.demo-textarea-input {
-  margin-bottom: 1.25rem;
-  font-family: var(--docforge-font-two, monospace);
+.demo-textarea {
+  height: 320px;
   resize: vertical;
+  font-family: var(--docforge-font-two, monospace);
+  /* Cố định sáng/tối cho editor để chữ + placeholder luôn đọc được dù đổi
+     theme trang — trước đây textarea đổi màu chữ theo dark mode nhưng nền
+     vẫn trắng nên phần hướng dẫn nhập gần như biến mất. */
   background: #ffffff !important;
   color: #1a1a1a !important;
 }
 
-.demo-textarea-input::placeholder {
+.demo-textarea::placeholder {
   color: #9aa0a6;
 }
 
-/* Khung kéo so sánh */
-.demo-compare-frame {
-  height: 380px;
+.demo-preview {
+  height: 320px;
   border: 1px solid var(--docforge-bdr-color);
-}
-
-.compare-layer-pdf {
+  border-radius: 12px;
+  overflow: hidden;
   background: #ffffff;
 }
 
@@ -705,64 +614,6 @@ const processSteps = ref([
 .demo-preview-placeholder i {
   font-size: 2rem;
   opacity: 0.5;
-}
-
-.compare-layer-md {
-  background: #0f172a;
-}
-
-.compare-md-inner {
-  width: 100%;
-  height: 100%;
-  padding: 1.25rem;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.compare-md-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #94a3b8;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.75rem;
-}
-
-.compare-md-source {
-  color: #e2e8f0;
-  font-family: var(--docforge-font-two, monospace);
-  font-size: 13px;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
-}
-
-.compare-tag {
-  position: absolute;
-  top: 12px;
-  z-index: 4;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  pointer-events: none;
-}
-
-.compare-tag-left {
-  left: 12px;
-  background: rgba(15, 23, 42, 0.85);
-  color: #e2e8f0;
-}
-
-.compare-tag-right {
-  right: 12px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #0f172a;
 }
 
 /* Tools Section */
@@ -909,6 +760,7 @@ const processSteps = ref([
 
 .cta-card > .row { position: relative; z-index: 1; }
 
+/* Tools Section background */
 .tools-section {
   position: relative;
   overflow: hidden;
@@ -927,6 +779,7 @@ const processSteps = ref([
 
 .tools-section .container { position: relative; z-index: 1; }
 
+/* Process Section background */
 .process-section {
   position: relative;
   overflow: hidden;
@@ -989,6 +842,7 @@ const processSteps = ref([
 
 /* Responsive */
 @media (max-width: 991.98px) {
+  .demo-split { grid-template-columns: 1fr; }
   .tool-card { padding: 1.5rem; }
   .process-timeline { grid-template-columns: 1fr; gap: 3rem; }
   .step-connector { display: none; }
@@ -1005,7 +859,7 @@ const processSteps = ref([
 @media (max-width: 575.98px) {
   .hero-badge { font-size: 12px; padding: 6px 16px; }
   .hero-subtitle { font-size: 1rem; }
-  .demo-compare-frame { height: 300px; }
+  .demo-textarea, .demo-preview { height: 240px; }
   .tool-card { padding: 1rem; }
   .cta-card { padding: 1.5rem; }
 }

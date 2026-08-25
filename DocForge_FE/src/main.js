@@ -33,6 +33,7 @@ try {
 
 // Import theme CSS
 import "./assets/css/theme.css";
+import "./assets/css/theme-patch.css";
 
 // Import theme manager
 import { ThemeManager } from "./assets/js/theme.js";

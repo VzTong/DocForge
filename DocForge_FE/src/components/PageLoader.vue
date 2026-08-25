@@ -20,7 +20,7 @@
         <!-- Logo Animation -->
         <div class="loader-logo">
           <div class="logo-icon bg-gradient-sunset">
-            <i class="bi bi-file-earmark-arrow-down-fill"></i>
+            <img src="/favicon.ico" alt="DocForge" class="logo-icon-img" />
           </div>
           <div class="logo-text">
             <div class="brand-name text-gradient-primary">{{ loadingText }}</div>
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--carrental-white);
+  background: var(--docforge-white);
   z-index: 1;
 }
 
@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
 .shape {
   position: absolute;
   border-radius: 50%;
-  background: var(--carrental-gradient-ocean);
+  background: var(--docforge-gradient-ocean);
   animation: floatAround 8s ease-in-out infinite;
 }
 
@@ -226,7 +226,7 @@ onBeforeUnmount(() => {
   height: 100px;
   top: 20%;
   left: 10%;
-  background: var(--carrental-gradient-primary);
+  background: var(--docforge-gradient-primary);
   animation-delay: 0s;
 }
 
@@ -235,7 +235,7 @@ onBeforeUnmount(() => {
   height: 150px;
   top: 60%;
   right: 15%;
-  background: var(--carrental-gradient-ocean);
+  background: var(--docforge-gradient-ocean);
   animation-delay: 2s;
 }
 
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
   height: 80px;
   bottom: 20%;
   left: 20%;
-  background: var(--carrental-gradient-teal);
+  background: var(--docforge-gradient-teal);
   animation-delay: 4s;
 }
 
@@ -253,7 +253,7 @@ onBeforeUnmount(() => {
   height: 120px;
   top: 10%;
   right: 30%;
-  background: var(--carrental-gradient-sunset);
+  background: var(--docforge-gradient-sunset);
   animation-delay: 1s;
 }
 
@@ -308,9 +308,17 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   font-size: 32px;
-  color: var(--carrental-white);
-  box-shadow: var(--carrental-shadow-xl);
+  color: var(--docforge-white);
+  box-shadow: var(--docforge-shadow-xl);
   animation: iconSpin 4s linear infinite;
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+.logo-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 @keyframes iconSpin {
@@ -333,7 +341,7 @@ onBeforeUnmount(() => {
   font-weight: 800;
   letter-spacing: -1px;
   line-height: 1;
-  font-family: var(--carrental-font-two);
+  font-family: var(--docforge-font-two);
   animation: textGlow 2s ease-in-out infinite alternate;
 }
 
@@ -379,18 +387,18 @@ onBeforeUnmount(() => {
 }
 
 .ring-1 {
-  border-top-color: var(--carrental-base);
+  border-top-color: var(--docforge-base);
   animation: spin 2s linear infinite;
 }
 
 .ring-2 {
-  border-right-color: var(--carrental-ocean);
+  border-right-color: var(--docforge-ocean);
   animation: spin 3s linear infinite reverse;
   transform: scale(0.8);
 }
 
 .ring-3 {
-  border-bottom-color: var(--carrental-teal);
+  border-bottom-color: var(--docforge-teal);
   animation: spin 4s linear infinite;
   transform: scale(0.6);
 }
@@ -402,12 +410,12 @@ onBeforeUnmount(() => {
   transform: translate(-50%, -50%);
   width: 40px;
   height: 40px;
-  background: var(--carrental-gradient-sunset);
+  background: var(--docforge-gradient-sunset);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--carrental-white);
+  color: var(--docforge-white);
   font-size: 20px;
   animation: centerPulse 1.5s ease-in-out infinite;
 }
@@ -439,7 +447,7 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   height: 6px;
-  background: var(--carrental-bdr-color);
+  background: var(--docforge-bdr-color);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -447,7 +455,7 @@ onBeforeUnmount(() => {
 
 .progress-fill {
   height: 100%;
-  background: var(--carrental-gradient-primary);
+  background: var(--docforge-gradient-primary);
   border-radius: 3px;
   transition: width 0.3s ease;
   position: relative;
@@ -475,7 +483,7 @@ onBeforeUnmount(() => {
 .progress-text {
   font-size: 14px;
   font-weight: 700;
-  color: var(--carrental-black);
+  color: var(--docforge-black);
   text-align: center;
 }
 
@@ -490,7 +498,7 @@ onBeforeUnmount(() => {
 .message-text {
   font-size: 16px;
   font-weight: 600;
-  color: var(--carrental-black);
+  color: var(--docforge-black);
   animation: messageSlide 0.5s ease-in-out;
 }
 
@@ -514,7 +522,7 @@ onBeforeUnmount(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--carrental-base);
+  background: var(--docforge-base);
   animation: dotBounce 1.4s ease-in-out infinite;
 }
 

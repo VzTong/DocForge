@@ -1,8 +1,7 @@
 // Theme Management System
 class ThemeManager {
   constructor() {
-    // ĐỔI: mặc định 'dark' khi user chưa từng chọn theme (trước đây là 'light')
-    this.currentTheme = this.getStoredTheme() || 'dark'
+    this.currentTheme = this.getStoredTheme() || 'light'
     this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     this.themeToggleButton = null
 
@@ -10,11 +9,10 @@ class ThemeManager {
   }
 
   init() {
-    // Apply stored theme or default
+    // Apply stored theme or system preference
     this.applyTheme(this.currentTheme)
 
-    // Chỉ nghe system theme đổi nếu user CHƯA từng tự chọn (giữ nguyên hành vi cũ,
-    // chỉ khác ở giá trị mặc định ban đầu là dark thay vì light).
+    // Listen for system theme changes
     this.mediaQuery.addEventListener('change', (e) => {
       if (!this.getStoredTheme()) {
         this.setTheme(e.matches ? 'dark' : 'light')
@@ -37,7 +35,7 @@ class ThemeManager {
 
   getStoredTheme() {
     try {
-      return localStorage.getItem('docforge-theme')
+      return localStorage.getItem('car-rental-theme')
     } catch (error) {
       console.warn('Could not access localStorage:', error)
       return null
@@ -46,7 +44,7 @@ class ThemeManager {
 
   setStoredTheme(theme) {
     try {
-      localStorage.setItem('docforge-theme', theme)
+      localStorage.setItem('car-rental-theme', theme)
     } catch (error) {
       console.warn('Could not save to localStorage:', error)
     }
@@ -70,6 +68,8 @@ class ThemeManager {
     this.setTheme(newTheme)
   }
 
+  // Giữ lại các hàm này (không xoá) phòng khi sau này muốn bật lại nút nổi,
+  // nhưng init() không còn gọi createThemeToggle() nữa.
   createThemeToggle() {
     const existing = document.querySelector('.theme-toggle')
     if (existing) {
@@ -112,6 +112,7 @@ class ThemeManager {
   }
 
   announceThemeChange(theme) {
+    // For screen readers
     const announcement = document.createElement('div')
     announcement.setAttribute('aria-live', 'polite')
     announcement.setAttribute('aria-atomic', 'true')
@@ -232,7 +233,7 @@ const ThemeUtils = {
   },
 
   generateGradient(opacity = 1) {
-    const theme = window.themeManager?.getCurrentTheme() || 'dark'
+    const theme = window.themeManager?.getCurrentTheme() || 'light'
     const baseColor = theme === 'dark' ? '26, 26, 26' : '255, 255, 255'
 
     return `linear-gradient(135deg,

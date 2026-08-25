@@ -1,6 +1,12 @@
 <template>
   <div class="convert-page py-5">
     <div class="container">
+      <Breadcrumb :items="[
+        { label: 'Trang chủ', to: '/', icon: 'bi bi-house' },
+        { label: 'Công cụ', to: '/#cong-cu' },
+        { label: 'Markdown → PDF' }
+      ]" />
+
       <div class="text-center mb-5">
         <div class="section-badge js-header">
           <i class="bi bi-file-earmark-pdf text-ocean"></i>
@@ -125,8 +131,9 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import anime from 'animejs'
+import { animate, createTimeline, stagger, spring } from 'animejs'
 import { useMdToPdfConverter } from '@/composables/useApi'
+import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const { loading, fetchOptions, Preview, ConvertToPDF } = useMdToPdfConverter()
 
@@ -196,11 +203,9 @@ const runPreview = debounce(async () => {
 
     nextTick(() => {
       if (previewPaneEl.value) {
-        anime({
-          targets: previewPaneEl.value,
+        animate(previewPaneEl.value, {
           scale: [0.97, 1],
-          duration: 420,
-          easing: 'easeOutBack'
+          ease: spring({ bounce: 0.4, duration: 450 })
         })
       }
     })
@@ -218,13 +223,12 @@ const runPreview = debounce(async () => {
 watch([content, theme, pageSize], runPreview, { immediate: true })
 
 onMounted(() => {
-  anime.timeline({ easing: 'easeOutExpo' })
-    .add({
-      targets: '.js-header',
+  createTimeline({ defaults: { ease: 'outExpo' } })
+    .add('.js-header', {
       opacity: [0, 1],
       translateY: [24, 0],
       duration: 650,
-      delay: anime.stagger(120)
+      delay: stagger(120)
     })
 })
 
@@ -308,8 +312,8 @@ async function handleDownload() {
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 999px;
-  background: var(--carrental-light);
-  color: var(--carrental-gray);
+  background: var(--docforge-light);
+  color: var(--docforge-gray);
 }
 
 .btn-import {
@@ -318,17 +322,17 @@ async function handleDownload() {
   gap: 8px;
   padding: 8px 16px;
   border-radius: 10px;
-  border: 1px solid var(--carrental-bdr-color);
-  background: var(--carrental-white);
-  color: var(--carrental-base);
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-white);
+  color: var(--docforge-base);
   font-weight: 600;
   cursor: pointer;
-  transition: var(--carrental-transition);
+  transition: var(--docforge-transition);
 }
 
 .btn-import:hover {
-  border-color: var(--carrental-base);
-  background: var(--carrental-light);
+  border-color: var(--docforge-base);
+  background: var(--docforge-light);
 }
 
 .editor-split {
@@ -343,8 +347,8 @@ async function handleDownload() {
   resize: vertical;
   padding: 16px;
   border-radius: 12px;
-  border: 1px solid var(--carrental-bdr-color);
-  font-family: var(--carrental-font-two, monospace);
+  border: 1px solid var(--docforge-bdr-color);
+  font-family: var(--docforge-font-two, monospace);
   font-size: 14px;
   line-height: 1.6;
   /* Cố định sáng/tối cho editor để chữ luôn đọc được dù đổi theme trang */
@@ -354,7 +358,7 @@ async function handleDownload() {
 
 .md-editor:focus {
   outline: none;
-  border-color: var(--carrental-base);
+  border-color: var(--docforge-base);
 }
 
 .md-editor::placeholder {
@@ -377,7 +381,7 @@ async function handleDownload() {
 .preview-loading-hint {
   font-size: 12px;
   font-weight: 500;
-  color: var(--carrental-gray);
+  color: var(--docforge-gray);
   margin-left: 4px;
 }
 
@@ -389,7 +393,7 @@ async function handleDownload() {
 .preview-frame {
   width: 100%;
   height: 480px;
-  border: 1px solid var(--carrental-bdr-color);
+  border: 1px solid var(--docforge-bdr-color);
   border-radius: 12px;
   background: #fff;
 }
@@ -401,9 +405,9 @@ async function handleDownload() {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px dashed var(--carrental-bdr-color);
+  border: 1px dashed var(--docforge-bdr-color);
   border-radius: 12px;
-  color: var(--carrental-gray);
+  color: var(--docforge-gray);
   font-size: 14px;
   text-align: center;
   padding: 1rem;
@@ -424,7 +428,7 @@ async function handleDownload() {
   background: rgba(255, 255, 255, 0.72);
   border-radius: 12px;
   font-weight: 600;
-  color: var(--carrental-black);
+  color: var(--docforge-black);
   z-index: 2;
   pointer-events: none;
 }
@@ -433,7 +437,7 @@ async function handleDownload() {
   width: 18px;
   height: 18px;
   border: 2px solid rgba(0, 0, 0, 0.15);
-  border-top-color: var(--carrental-ocean, #1e40af);
+  border-top-color: var(--docforge-ocean, #1e40af);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
