@@ -172,8 +172,13 @@ export function useMdToPdfConverter() {
     })
   }
 
-  /** Render preview PDF (inline) từ nội dung Markdown, trả về Object URL để nhúng iframe */
-    const Preview = (mdContent, theme, pageSize) => {
+    /**
+   * Preview PDF từ Markdown.
+   * BE: POST /preview/md-to-pdf  body JSON { contents, theme, page_size }
+   * 422 = ConversionError từ WeasyPrint (thiếu lib hệ thống / CSS / nội dung lỗi),
+   *      KHÔNG phải validation form.
+   */
+  const Preview = (mdContent, theme, pageSize) => {
     return execute(async () => {
       const res = await fetch(`${PY_SERVICE_URL}/preview/md-to-pdf`, {
         method: 'POST',
@@ -187,11 +192,11 @@ export function useMdToPdfConverter() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        // FastAPI: detail có thể là string HOẶC mảng validation
         let msg = `Preview thất bại (${res.status})`
         if (typeof errData.detail === 'string') {
           msg = errData.detail
         } else if (Array.isArray(errData.detail)) {
+          // FastAPI validation style
           msg = errData.detail
             .map((d) => d.msg || JSON.stringify(d))
             .join('; ')
@@ -200,9 +205,10 @@ export function useMdToPdfConverter() {
       }
 
       const blob = await res.blob()
-      // Một số proxy trả HTML lỗi dạng blob — chặn sớm
-      if (blob.type && blob.type.includes('text/html')) {
-        throw new Error('Server trả HTML thay vì PDF — kiểm tra WeasyPrint / dependency BE')
+      // Một số lỗi BE trả JSON nhưng status lạ — phòng hờ
+      if (blob.type && blob.type.includes('json')) {
+        const text = await blob.text()
+        throw new Error(text.slice(0, 200) || 'Preview trả JSON thay vì PDF')
       }
       return URL.createObjectURL(blob)
     }, { showLoading: false })

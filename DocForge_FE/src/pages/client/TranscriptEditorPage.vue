@@ -9,6 +9,7 @@
         ]"
       />
 
+      <!-- Header -->
       <div class="text-center mb-4">
         <div class="section-badge js-header">
           <i class="bi bi-mic-fill text-ocean"></i>
@@ -22,6 +23,7 @@
         </p>
       </div>
 
+      <!-- Steps 1 → 2 → 3 -->
       <div class="steps-bar js-header">
         <div class="step-item" :class="{ active: step === 1, done: step > 1 }">
           <span class="step-num">1</span>
@@ -42,11 +44,14 @@
       <div class="row justify-content-center">
         <div class="col-lg-10">
           <div class="tx-card card-modern js-header">
-            <!-- STEP 1 -->
+            <!-- ========== STEP 1: Upload ========== -->
             <div v-if="step === 1" class="step-panel">
               <div
                 class="dropzone"
-                :class="{ 'dropzone-active': isDragging, 'dropzone-has-file': !!selectedFile }"
+                :class="{
+                  'dropzone-active': isDragging,
+                  'dropzone-has-file': !!selectedFile
+                }"
                 @dragover.prevent="isDragging = true"
                 @dragleave.prevent="isDragging = false"
                 @drop.prevent="onDrop"
@@ -70,6 +75,8 @@
                   </div>
                 </template>
               </div>
+
+              <!-- input ẩn — chỉ mở bằng click user (tránh "user activation") -->
               <input
                 ref="fileInputRef"
                 type="file"
@@ -78,17 +85,26 @@
                 @change="onFileSelected"
               />
 
+              <!-- Hint / prompt Whisper -->
               <div class="panel-block">
                 <div class="panel-block-title">
                   <i class="bi bi-lightbulb"></i> Gợi ý ngữ cảnh
                   <span class="optional">tuỳ chọn</span>
                 </div>
                 <p class="panel-help">
-                  Giúp nhận đúng tên riêng. Để “Không mồi” nếu không chắc.
+                  Giúp nhận đúng tên riêng / thuật ngữ. Để “Không mồi” nếu không chắc.
                 </p>
                 <div class="hint-grid">
-                  <select v-model="selectedPreset" class="form-select" @change="onPresetChange">
-                    <option v-for="opt in presetHints" :key="opt.label" :value="opt.value">
+                  <select
+                    v-model="selectedPreset"
+                    class="form-select"
+                    @change="onPresetChange"
+                  >
+                    <option
+                      v-for="opt in presetHints"
+                      :key="opt.label"
+                      :value="opt.value"
+                    >
                       {{ opt.label }}
                     </option>
                   </select>
@@ -125,53 +141,105 @@
                   {{ loading ? 'Đang nhận dạng…' : 'Tạo transcript' }}
                 </button>
               </div>
+
               <p v-if="error" class="alert-inline danger">
                 <i class="bi bi-exclamation-circle"></i> {{ error }}
               </p>
             </div>
 
-            <!-- STEP 2 -->
+            <!-- ========== STEP 2: Edit + nghe ========== -->
             <div v-else class="step-panel">
               <div class="editor-top">
                 <div class="editor-top-left">
                   <span class="pill">{{ segments.length }} câu</span>
                   <span class="pill muted">{{ formatDuration(duration) }}</span>
-                  <span v-if="selectedFile" class="pill muted file-name">{{ selectedFile.name }}</span>
+                  <span v-if="selectedFile" class="pill muted file-name">
+                    {{ selectedFile.name }}
+                  </span>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" @click="resetEditor">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="resetEditor"
+                >
                   <i class="bi bi-arrow-counterclockwise"></i> Làm lại
                 </button>
               </div>
 
+              <!-- Audio ẩn + thanh điều khiển -->
               <audio
                 v-if="audioUrl"
                 ref="audioEl"
                 :src="audioUrl"
                 preload="metadata"
                 class="sr-only-input"
+                @timeupdate="onTimeUpdate"
+                @loadedmetadata="onLoadedMeta"
                 @ended="onAudioEnded"
+                @play="isPlaying = true"
+                @pause="isPlaying = false"
               ></audio>
 
               <div v-if="audioUrl" class="audio-bar">
-                <button type="button" class="btn btn-outline-primary btn-sm" @click="playFull">
-                  <i class="bi bi-play-fill"></i> Nghe toàn bộ
-                </button>
                 <button
-                  v-if="isPlaying"
                   type="button"
                   class="btn btn-outline-secondary btn-sm"
-                  @click="pauseAudio"
+                  title="Tua lùi 10 giây"
+                  @click="seekBy(-10)"
                 >
-                  <i class="bi bi-pause-fill"></i> Tạm dừng
+                  <i class="bi bi-skip-backward-fill"></i> 10s
                 </button>
-                <span class="text-muted small">Hoặc bấm ▶ trên từng câu</span>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  @click="togglePlay"
+                >
+                  <i :class="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+                  {{ isPlaying ? 'Tạm dừng' : 'Phát' }}
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  title="Tua tới 10 giây"
+                  @click="seekBy(10)"
+                >
+                  10s <i class="bi bi-skip-forward-fill"></i>
+                </button>
+
+                <!-- Scrubber kéo timeline -->
+                <div class="scrub-wrap">
+                  <span class="scrub-time">{{ formatTime(currentTime) }}</span>
+                  <input
+                    type="range"
+                    class="scrub-range"
+                    min="0"
+                    :max="scrubMax"
+                    step="0.1"
+                    :value="currentTime"
+                    @input="onScrub"
+                  />
+                  <span class="scrub-time">{{ formatTime(scrubMax) }}</span>
+                </div>
               </div>
 
+              <!-- Đổi hint & chạy lại (thu gọn) -->
               <details class="rehint-box">
-                <summary><i class="bi bi-sliders"></i> Đổi gợi ý &amp; chạy lại</summary>
+                <summary>
+                  <i class="bi bi-sliders"></i> Đổi gợi ý &amp; chạy lại
+                </summary>
                 <div class="hint-grid mt-2">
-                  <select v-model="selectedPreset" class="form-select" @change="onPresetChange">
-                    <option v-for="opt in presetHints" :key="opt.label" :value="opt.value">
+                  <select
+                    v-model="selectedPreset"
+                    class="form-select"
+                    @change="onPresetChange"
+                  >
+                    <option
+                      v-for="opt in presetHints"
+                      :key="opt.label"
+                      :value="opt.value"
+                    >
                       {{ opt.label }}
                     </option>
                   </select>
@@ -194,23 +262,35 @@
                 </div>
               </details>
 
-              <!-- Find & replace -->
+              <!-- Find & Replace -->
               <div class="fr-bar">
                 <div class="fr-inputs">
                   <div class="fr-field">
                     <i class="bi bi-search"></i>
-                    <input v-model="findText" type="text" placeholder="Tìm…" @keyup.enter="applyFindReplace" />
+                    <input
+                      v-model="findText"
+                      type="text"
+                      placeholder="Tìm…"
+                      @keyup.enter="applyFindReplace"
+                    />
                   </div>
                   <div class="fr-field">
                     <i class="bi bi-pencil"></i>
-                    <input v-model="replaceText" type="text" placeholder="Thay…" @keyup.enter="applyFindReplace" />
+                    <input
+                      v-model="replaceText"
+                      type="text"
+                      placeholder="Thay…"
+                      @keyup.enter="applyFindReplace"
+                    />
                   </div>
                 </div>
                 <div class="fr-actions">
                   <label class="fr-case">
                     <input v-model="caseSensitive" type="checkbox" /> Aa
                   </label>
-                  <span v-if="findText.trim()" class="fr-count">{{ matchCount }} khớp</span>
+                  <span v-if="findText.trim()" class="fr-count">
+                    {{ matchCount }} khớp
+                  </span>
                   <button
                     type="button"
                     class="btn btn-primary btn-sm"
@@ -222,7 +302,7 @@
                 </div>
               </div>
 
-              <!-- Segments -->
+              <!-- Danh sách segment -->
               <div class="seg-shell">
                 <div class="seg-head">
                   <span>Thời gian</span>
@@ -233,7 +313,10 @@
                     v-for="(seg, index) in segments"
                     :key="seg.id"
                     class="seg-row"
-                    :class="{ editing: editingIndex === index, playing: currentSegId === seg.id }"
+                    :class="{
+                      editing: editingIndex === index,
+                      playing: currentSegId === seg.id
+                    }"
                   >
                     <div class="seg-time">
                       <button
@@ -245,7 +328,9 @@
                       >
                         <i class="bi bi-play-fill"></i>
                       </button>
-                      <span>{{ formatTime(seg.start) }} → {{ formatTime(seg.end) }}</span>
+                      <span>
+                        {{ formatTime(seg.start) }} → {{ formatTime(seg.end) }}
+                      </span>
                     </div>
                     <textarea
                       v-model="seg.text"
@@ -259,6 +344,7 @@
                 </div>
               </div>
 
+              <!-- Export -->
               <div class="export-bar">
                 <div class="export-fields">
                   <div>
@@ -290,6 +376,7 @@
                   Tải xuống
                 </button>
               </div>
+
               <p v-if="error" class="alert-inline danger mt-3">
                 <i class="bi bi-exclamation-circle"></i> {{ error }}
               </p>
@@ -302,6 +389,17 @@
 </template>
 
 <script setup>
+/**
+ * TranscriptEditorPage
+ * ----------------------
+ * Flow:
+ *  1) Chọn / kéo audio → blob URL để nghe lại trên trang
+ *  2) Gọi previewAudio (Whisper/Groq) → segments
+ *  3) Sửa text, Find/Replace, nghe full / ±10s / scrub / theo câu
+ *  4) Export SRT | VTT | TXT
+ *
+ * Phụ thuộc: useTranscriptEditor, Breadcrumb, animejs (entrance nhẹ)
+ */
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { createTimeline, stagger } from 'animejs'
 import { useTranscriptEditor } from '@/composables/useTranscriptEditor'
@@ -330,15 +428,21 @@ const {
   getCurrentHint
 } = useTranscriptEditor()
 
+/* ---------- Local UI state ---------- */
 const selectedFile = ref(null)
 const fileInputRef = ref(null)
 const editingIndex = ref(-1)
 const isDragging = ref(false)
 const langChoice = ref('')
+
+/* Audio playback */
 const audioUrl = ref('')
 const audioEl = ref(null)
 const isPlaying = ref(false)
 const currentSegId = ref(null)
+const currentTime = ref(0)
+const audioDuration = ref(0)
+/** Handler dừng đúng cuối segment khi play theo câu */
 let stopHandler = null
 
 const step = computed(() => (segments.value.length > 0 ? 2 : 1))
@@ -348,10 +452,20 @@ const suggestedFilename = computed(() =>
     ? selectedFile.value.name.replace(/\.[^/.]+$/, '')
     : 'transcript'
 )
+/** max của range = duration từ audio element hoặc từ API */
+const scrubMax = computed(() => {
+  const d = audioDuration.value || duration.value || 0
+  return d > 0 ? d : 0
+})
 
+/* Blob URL theo file đã chọn — revoke khi đổi / unmount */
 watch(selectedFile, (file) => {
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
   audioUrl.value = file ? URL.createObjectURL(file) : ''
+  currentTime.value = 0
+  audioDuration.value = 0
+  isPlaying.value = false
+  currentSegId.value = null
 })
 
 onBeforeUnmount(() => {
@@ -367,6 +481,7 @@ function clearStopHandler() {
   }
 }
 
+/* ---------- Helpers ---------- */
 function formatBytes(n) {
   if (n < 1024) return `${n} B`
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
@@ -386,6 +501,7 @@ function autoResizeTextarea(e) {
   el.style.height = `${Math.min(el.scrollHeight, 140)}px`
 }
 
+/* ---------- File pick ---------- */
 function onDropzoneClick() {
   if (selectedFile.value) return
   fileInputRef.value?.click()
@@ -417,6 +533,7 @@ function clearFile() {
   selectedFile.value = null
 }
 
+/* ---------- Hint presets ---------- */
 function onPresetChange() {
   if (selectedPreset.value) customHint.value = ''
 }
@@ -424,6 +541,7 @@ function onCustomHintInput() {
   if (customHint.value.trim()) selectedPreset.value = ''
 }
 
+/* ---------- Transcribe / export ---------- */
 async function handlePreview() {
   if (!selectedFile.value) return
   await previewAudio(selectedFile.value, {
@@ -464,25 +582,58 @@ function resetEditor() {
   langChoice.value = ''
   isPlaying.value = false
   currentSegId.value = null
+  currentTime.value = 0
 }
 
-function playFull() {
+/* ---------- Playback: full / ±10s / scrub / segment ---------- */
+function onTimeUpdate() {
   const a = audioEl.value
   if (!a) return
-  clearStopHandler()
-  currentSegId.value = null
-  a.currentTime = 0
-  a.play()
-  isPlaying.value = true
+  currentTime.value = a.currentTime
+  if (a.duration && !Number.isNaN(a.duration)) {
+    audioDuration.value = a.duration
+  }
 }
 
-function pauseAudio() {
-  audioEl.value?.pause()
-  isPlaying.value = false
+function onLoadedMeta() {
+  const a = audioEl.value
+  if (a && a.duration && !Number.isNaN(a.duration)) {
+    audioDuration.value = a.duration
+  }
+}
+
+function seekBy(sec) {
+  const a = audioEl.value
+  if (!a) return
+  const max = a.duration || scrubMax.value || 0
+  a.currentTime = Math.max(0, Math.min(max, a.currentTime + sec))
+  currentTime.value = a.currentTime
+}
+
+function onScrub(e) {
+  const a = audioEl.value
+  if (!a) return
+  const t = Number(e.target.value)
+  a.currentTime = t
+  currentTime.value = t
+  // Kéo thanh thì bỏ chế độ “chỉ phát 1 câu”
   currentSegId.value = null
   clearStopHandler()
 }
 
+function togglePlay() {
+  const a = audioEl.value
+  if (!a) return
+  if (a.paused) {
+    clearStopHandler()
+    currentSegId.value = null
+    a.play()
+  } else {
+    a.pause()
+  }
+}
+
+/** Phát đúng [start, end] của một segment rồi tự dừng */
 function playSegment(seg) {
   const a = audioEl.value
   if (!a) return
@@ -490,11 +641,9 @@ function playSegment(seg) {
   currentSegId.value = seg.id
   a.currentTime = Math.max(0, seg.start)
   a.play()
-  isPlaying.value = true
   stopHandler = () => {
     if (a.currentTime >= seg.end - 0.05) {
       a.pause()
-      isPlaying.value = false
       currentSegId.value = null
       clearStopHandler()
     }
@@ -519,191 +668,519 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.js-header { opacity: 0; }
-.tx-page { min-height: 60vh; }
+/* ==========================================================================
+   Layout / page
+   ========================================================================== */
+.js-header {
+  opacity: 0;
+}
+.tx-page {
+  min-height: 60vh;
+}
+.tx-card {
+  padding: 1.5rem 1.75rem;
+  border-radius: 20px;
+}
+
+/* ==========================================================================
+   Steps indicator
+   ========================================================================== */
 .steps-bar {
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 1.75rem; max-width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.75rem;
+  max-width: 520px;
 }
 .step-item {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 600; color: var(--docforge-gray);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--docforge-gray);
 }
-.step-item.active { color: var(--docforge-base); }
-.step-item.done { color: #10b981; }
+.step-item.active {
+  color: var(--docforge-base);
+}
+.step-item.done {
+  color: #10b981;
+}
 .step-num {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 12px; font-weight: 800;
-  border: 2px solid currentColor; background: var(--docforge-white);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  border: 2px solid currentColor;
+  background: var(--docforge-white);
 }
 .step-item.active .step-num {
-  background: var(--docforge-gradient-primary); border-color: transparent; color: #fff;
+  background: var(--docforge-gradient-primary);
+  border-color: transparent;
+  color: #fff;
 }
 .step-item.done .step-num {
-  background: #10b981; border-color: transparent; color: #fff;
+  background: #10b981;
+  border-color: transparent;
+  color: #fff;
 }
 .step-line {
-  width: 36px; height: 2px; margin: 0 8px; background: var(--docforge-bdr-color);
+  width: 36px;
+  height: 2px;
+  margin: 0 8px;
+  background: var(--docforge-bdr-color);
 }
-.step-line.on { background: #10b981; }
+.step-line.on {
+  background: #10b981;
+}
 
-.tx-card { padding: 1.5rem 1.75rem; border-radius: 20px; }
-
+/* ==========================================================================
+   Dropzone + file chip
+   ========================================================================== */
 .dropzone {
-  border: 2px dashed var(--docforge-bdr-color); border-radius: 16px;
-  padding: 2.25rem 1.5rem; text-align: center; cursor: pointer;
-  background: var(--docforge-light); margin-bottom: 1.25rem;
+  border: 2px dashed var(--docforge-bdr-color);
+  border-radius: 16px;
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--docforge-light);
+  margin-bottom: 1.25rem;
   transition: var(--docforge-transition);
 }
-.dropzone:hover, .dropzone-active {
-  border-color: var(--docforge-base); background: rgba(253, 85, 35, 0.06);
+.dropzone:hover,
+.dropzone-active {
+  border-color: var(--docforge-base);
+  background: rgba(253, 85, 35, 0.06);
 }
-.dropzone-has-file { cursor: default; padding: 1.25rem; border-style: solid; }
-.dropzone-icon { font-size: 2.5rem; color: var(--docforge-ocean); margin-bottom: 0.5rem; }
-.dropzone-title { font-weight: 700; margin: 0 0 0.25rem; color: var(--docforge-black); }
-.dropzone-hint { font-size: 13px; color: var(--docforge-gray); margin: 0; }
+.dropzone-has-file {
+  cursor: default;
+  padding: 1.25rem;
+  border-style: solid;
+}
+.dropzone-icon {
+  font-size: 2.5rem;
+  color: var(--docforge-ocean);
+  margin-bottom: 0.5rem;
+}
+.dropzone-title {
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: var(--docforge-black);
+}
+.dropzone-hint {
+  font-size: 13px;
+  color: var(--docforge-gray);
+  margin: 0;
+}
 
 .sr-only-input {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0,0,0,0); border: 0;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .file-chip {
-  display: flex; align-items: center; gap: 12px; text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
 }
-.file-chip > i { font-size: 1.75rem; color: var(--docforge-ocean); }
-.file-chip-meta { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.file-chip-meta strong { color: var(--docforge-black); }
-.file-chip-meta span { font-size: 12px; color: var(--docforge-gray); }
+.file-chip > i {
+  font-size: 1.75rem;
+  color: var(--docforge-ocean);
+}
+.file-chip-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.file-chip-meta strong {
+  color: var(--docforge-black);
+}
+.file-chip-meta span {
+  font-size: 12px;
+  color: var(--docforge-gray);
+}
 .btn-icon {
-  border: none; background: transparent; color: var(--docforge-gray);
-  width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--docforge-gray);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
 }
-.btn-icon:hover { background: var(--docforge-bdr-color); color: #ef4444; }
+.btn-icon:hover {
+  background: var(--docforge-bdr-color);
+  color: #ef4444;
+}
 
+/* ==========================================================================
+   Hint panel / form row
+   ========================================================================== */
 .panel-block {
-  margin-bottom: 1.25rem; padding: 1rem 1.15rem; border-radius: 14px;
-  border: 1px solid var(--docforge-bdr-color); background: var(--docforge-white);
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 14px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-white);
 }
 .panel-block-title {
-  display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
 }
 .optional {
-  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
-  background: var(--docforge-light); color: var(--docforge-gray);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--docforge-light);
+  color: var(--docforge-gray);
 }
-.panel-help { font-size: 13px; color: var(--docforge-gray); margin: 0 0 0.75rem; }
+.panel-help {
+  font-size: 13px;
+  color: var(--docforge-gray);
+  margin: 0 0 0.75rem;
+}
 .hint-grid {
-  display: grid; grid-template-columns: minmax(160px, 0.9fr) 1.4fr auto; gap: 10px;
+  display: grid;
+  grid-template-columns: minmax(160px, 0.9fr) 1.4fr auto;
+  gap: 10px;
 }
 .panel-row {
-  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
 }
-.field-grow { flex: 1; min-width: 160px; }
+.field-grow {
+  flex: 1;
+  min-width: 160px;
+}
 .alert-inline.danger {
-  display: flex; gap: 8px; margin-top: 0.75rem; color: #ef4444; font-weight: 600; font-size: 14px;
+  display: flex;
+  gap: 8px;
+  margin-top: 0.75rem;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 14px;
 }
 
+/* ==========================================================================
+   Editor top + pills
+   ========================================================================== */
 .editor-top {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 1rem;
 }
-.editor-top-left { display: flex; flex-wrap: wrap; gap: 8px; }
+.editor-top-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-  border-radius: 999px; font-size: 12px; font-weight: 700;
-  background: rgba(30, 64, 175, 0.12); color: var(--docforge-ocean);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(30, 64, 175, 0.12);
+  color: var(--docforge-ocean);
 }
-.pill.muted { background: var(--docforge-light); color: var(--docforge-gray); }
-.file-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill.muted {
+  background: var(--docforge-light);
+  color: var(--docforge-gray);
+}
+.file-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
+/* ==========================================================================
+   Audio bar + scrubber
+   ========================================================================== */
 .audio-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-  margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 12px;
-  background: var(--docforge-light); border: 1px solid var(--docforge-bdr-color);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--docforge-light);
+  border: 1px solid var(--docforge-bdr-color);
+}
+.scrub-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 180px;
+}
+.scrub-range {
+  flex: 1;
+  accent-color: var(--docforge-ocean);
+  cursor: pointer;
+}
+.scrub-time {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--docforge-gray);
+  min-width: 40px;
 }
 
+/* ==========================================================================
+   Re-hint + Find/Replace
+   ========================================================================== */
 .rehint-box {
-  margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 12px;
-  border: 1px solid var(--docforge-bdr-color); background: var(--docforge-light);
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-light);
 }
 .rehint-box summary {
-  cursor: pointer; font-weight: 600; font-size: 13px; list-style: none;
-  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.rehint-box summary::-webkit-details-marker { display: none; }
+.rehint-box summary::-webkit-details-marker {
+  display: none;
+}
 
 .fr-bar {
-  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-  justify-content: space-between; padding: 0.85rem 1rem; border-radius: 12px;
-  border: 1px solid var(--docforge-bdr-color); margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--docforge-bdr-color);
+  margin-bottom: 1rem;
 }
-.fr-inputs { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.fr-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
 .fr-field {
-  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
-  border-radius: 10px; border: 1px solid var(--docforge-bdr-color);
-  background: var(--docforge-light); min-width: 140px; flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: var(--docforge-light);
+  min-width: 140px;
+  flex: 1;
 }
-.fr-field input { border: none; background: transparent; outline: none; width: 100%; }
-.fr-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.fr-case { font-size: 12px; font-weight: 600; color: var(--docforge-gray); margin: 0; cursor: pointer; }
-.fr-count { font-size: 12px; font-weight: 700; color: var(--docforge-ocean); }
+.fr-field input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+}
+.fr-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fr-case {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--docforge-gray);
+  margin: 0;
+  cursor: pointer;
+}
+.fr-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--docforge-ocean);
+}
 
+/* ==========================================================================
+   Segment list
+   ========================================================================== */
 .seg-shell {
-  border: 1px solid var(--docforge-bdr-color); border-radius: 14px;
-  overflow: hidden; margin-bottom: 1.25rem; background: var(--docforge-white);
+  border: 1px solid var(--docforge-bdr-color);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  background: var(--docforge-white);
 }
 .seg-head {
-  display: grid; grid-template-columns: 170px 1fr; gap: 8px;
-  padding: 0.65rem 1rem; font-size: 12px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.04em; color: var(--docforge-gray);
-  background: var(--docforge-light); border-bottom: 1px solid var(--docforge-bdr-color);
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 8px;
+  padding: 0.65rem 1rem;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--docforge-gray);
+  background: var(--docforge-light);
+  border-bottom: 1px solid var(--docforge-bdr-color);
 }
-.seg-list { max-height: min(480px, 55vh); overflow-y: auto; }
+.seg-list {
+  max-height: min(480px, 55vh);
+  overflow-y: auto;
+}
 .seg-row {
-  display: grid; grid-template-columns: 170px 1fr; gap: 8px;
-  padding: 0.45rem 1rem; border-bottom: 1px solid var(--docforge-bdr-color);
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 8px;
+  padding: 0.45rem 1rem;
+  border-bottom: 1px solid var(--docforge-bdr-color);
 }
-.seg-row:last-child { border-bottom: none; }
-.seg-row.editing, .seg-row.playing { background: rgba(30, 64, 175, 0.08); }
+.seg-row:last-child {
+  border-bottom: none;
+}
+.seg-row.editing,
+.seg-row.playing {
+  background: rgba(30, 64, 175, 0.08);
+}
 .seg-time {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  font-family: ui-monospace, monospace; font-size: 11px; color: var(--docforge-gray);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--docforge-gray);
 }
 .seg-play {
-  border: none; width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(30, 64, 175, 0.12); color: var(--docforge-ocean);
-  display: inline-grid; place-items: center; cursor: pointer;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(30, 64, 175, 0.12);
+  color: var(--docforge-ocean);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
 }
-.seg-play.active { background: var(--docforge-ocean); color: #fff; }
+.seg-play.active {
+  background: var(--docforge-ocean);
+  color: #fff;
+}
 .seg-text {
-  width: 100%; min-height: 36px; max-height: 140px; padding: 8px 10px;
-  border: 1px solid transparent; border-radius: 8px; resize: none;
-  font-size: 14px; line-height: 1.5; color: var(--docforge-black); background: transparent;
+  width: 100%;
+  min-height: 36px;
+  max-height: 140px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--docforge-black);
+  background: transparent;
 }
 .seg-text:focus {
-  outline: none; border-color: var(--docforge-ocean);
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15); background: var(--docforge-white);
+  outline: none;
+  border-color: var(--docforge-ocean);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+  background: var(--docforge-white);
 }
 
+/* ==========================================================================
+   Export bar
+   ========================================================================== */
 .export-bar {
-  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
-  padding: 1rem; border-radius: 14px; border: 1px solid var(--docforge-bdr-color);
-  background: linear-gradient(135deg, rgba(253,85,35,0.06), rgba(30,64,175,0.06));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--docforge-bdr-color);
+  background: linear-gradient(
+    135deg,
+    rgba(253, 85, 35, 0.06),
+    rgba(30, 64, 175, 0.06)
+  );
 }
-.export-fields { display: flex; flex-wrap: wrap; gap: 12px; flex: 1; }
-.export-fields .grow { flex: 1; min-width: 140px; }
+.export-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1;
+}
+.export-fields .grow {
+  flex: 1;
+  min-width: 140px;
+}
 
+/* ==========================================================================
+   Spinner
+   ========================================================================== */
 .btn-spinner {
-  display: inline-block; width: 1em; height: 1em; margin-right: 0.4em;
-  border: 2px solid currentColor; border-right-color: transparent;
-  border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -0.15em;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.4em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -0.15em;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
 @media (max-width: 767.98px) {
-  .hint-grid { grid-template-columns: 1fr; }
-  .seg-head, .seg-row { grid-template-columns: 1fr; }
-  .step-label { display: none; }
-  .export-bar { flex-direction: column; align-items: stretch; }
+  .hint-grid {
+    grid-template-columns: 1fr;
+  }
+  .seg-head,
+  .seg-row {
+    grid-template-columns: 1fr;
+  }
+  .step-label {
+    display: none;
+  }
+  .export-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .audio-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .scrub-wrap {
+    width: 100%;
+  }
 }
 </style>

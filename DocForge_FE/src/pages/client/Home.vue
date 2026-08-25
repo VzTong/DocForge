@@ -100,12 +100,12 @@
           >
             <!-- PDF layer (dưới) -->
             <div class="compare-layer compare-layer-pdf">
+              <iframe v-if="demoPreviewUrl" :src="demoPreviewUrl" class="demo-preview-frame" title="Xem trước PDF"></iframe>
               <iframe
-                v-if="demoPreviewUrl"
-                :key="demoPreviewUrl"
-                :src="demoPreviewUrl"
+                v-else-if="demoPreviewHtml"
+                :srcdoc="demoPreviewHtml"
                 class="demo-preview-frame"
-                title="Xem trước PDF"
+                title="HTML tạm"
               ></iframe>
               <div v-else class="demo-preview-placeholder">
                 <template v-if="isDemoLoading">
@@ -523,13 +523,6 @@ const tools = ref([
     iconClass: 'bg-gradient-ocean',
     title: 'Dịch transcript (AI)',
     description: 'Dịch thoát nghĩa, tự nhiên theo ngữ cảnh',
-    status: 'soon'
-  },
-  {
-    icon: 'bi bi-markdown',
-    iconClass: 'bg-gradient-teal',
-    title: 'TXT → Markdown',
-    description: 'Chuẩn hoá văn bản thuần sang cấu trúc Markdown cơ bản',
     status: 'soon'
   }
 ])
