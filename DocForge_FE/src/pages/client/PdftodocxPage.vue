@@ -14,10 +14,11 @@
             <i class="bi bi-file-earmark-word"></i>
           </div>
           <h1 class="tool-hero-title">
-            Chuyển <span class="text-gradient-ocean">PDF</span> sang <span class="text-gradient-primary">Word</span>
+            Chuyển <span class="text-gradient-ocean">PDF</span>
+            sang <span class="text-gradient-primary">Word</span>
           </h1>
           <p class="tool-hero-subtitle">
-            Tải file PDF lên, DocForge trích xuất nội dung sang .docx để bạn chỉnh sửa lại được ngay trong Word
+            Tải PDF lên — DocForge trả về .docx để mở và sửa trong Word / Google Docs
           </p>
         </div>
       </div>
@@ -26,34 +27,29 @@
     <section class="tool-body">
       <div class="container">
         <div class="tool-grid">
-          <!-- Cột trái: khu vực upload / convert -->
           <div class="tool-main card-glass js-panel-in">
+            <!-- Drop zone: KHÔNG phủ input absolute toàn khung (gây lỗi chooser) -->
             <div
               class="drop-zone"
-              :class="{ 'drop-zone-active': isDragOver, 'drop-zone-has-file': !!selectedFile }"
+              :class="{
+                'drop-zone-active': isDragOver,
+                'drop-zone-has-file': !!selectedFile
+              }"
               @dragover.prevent="isDragOver = true"
               @dragleave.prevent="isDragOver = false"
               @drop.prevent="onDrop"
-              @click="!selectedFile && fileInput.click()"
+              @click="onDropZoneClick"
             >
-              <input
-                ref="fileInput"
-                type="file"
-                accept="application/pdf"
-                class="drop-zone-input"
-                @change="onFileChosen"
-              />
-
               <template v-if="!selectedFile">
                 <div class="drop-zone-icon">
                   <i class="bi bi-cloud-arrow-up"></i>
                 </div>
                 <p class="drop-zone-title">Kéo thả file PDF vào đây</p>
-                <p class="drop-zone-hint">hoặc bấm để chọn file — tối đa {{ maxSizeMb }}MB</p>
+                <p class="drop-zone-hint">hoặc bấm để chọn — tối đa {{ maxSizeMb }}MB</p>
               </template>
 
               <template v-else>
-                <div class="file-card" ref="fileCardEl">
+                <div class="file-card" ref="fileCardEl" @click.stop>
                   <div class="file-card-icon">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
                   </div>
@@ -61,12 +57,25 @@
                     <div class="file-card-name">{{ selectedFile.name }}</div>
                     <div class="file-card-size">{{ formattedSize }}</div>
                   </div>
-                  <button class="file-card-remove" @click.stop="removeFile" title="Bỏ chọn file">
+                  <button
+                    type="button"
+                    class="file-card-remove"
+                    title="Bỏ chọn"
+                    @click.stop="removeFile"
+                  >
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
               </template>
             </div>
+
+            <input
+              ref="fileInput"
+              type="file"
+              accept="application/pdf,.pdf"
+              class="sr-only-input"
+              @change="onFileChosen"
+            />
 
             <p v-if="sizeError" class="tool-error">
               <i class="bi bi-exclamation-triangle"></i> {{ sizeError }}
@@ -75,12 +84,12 @@
               <i class="bi bi-exclamation-triangle"></i> {{ error }}
             </p>
 
-            <!-- Thanh tiến trình khi đang convert -->
+            <!-- Progress indeterminate (không % ảo) -->
             <div v-if="loading" class="convert-progress">
               <div class="convert-progress-track">
-                <div class="convert-progress-fill" :style="{ width: progress + '%' }"></div>
+                <div class="convert-progress-indeterminate"></div>
               </div>
-              <span class="convert-progress-text">Đang chuyển đổi… {{ Math.round(progress) }}%</span>
+              <span class="convert-progress-text">Đang chuyển đổi… vui lòng chờ</span>
             </div>
 
             <!-- Trạng thái vừa xong -->
@@ -90,21 +99,26 @@
             </div>
 
             <button
+              type="button"
               class="btn btn-ocean btn-lg w-100 convert-btn"
               :disabled="!selectedFile || loading"
-              @mousedown="!loading && selectedFile && pressBtn($event)"
-              @mouseup="releaseBtn"
-              @mouseleave="releaseBtn"
               @click="handleConvert"
             >
-              <span v-if="!loading"><i class="bi bi-arrow-repeat"></i> Chuyển sang Word</span>
-              <span v-else><i class="bi bi-hourglass-split"></i> Đang xử lý…</span>
+              <span v-if="!loading">
+                <i class="bi bi-file-earmark-word"></i> Chuyển sang Word
+              </span>
+              <span v-else>
+                <i class="bi bi-hourglass-split"></i> Đang xử lý…
+              </span>
             </button>
           </div>
 
-          <!-- Cột phải: lợi ích / lưu ý -->
           <aside class="tool-side">
-            <div class="side-card card-modern js-panel-in" v-for="(item, i) in sideFeatures" :key="i" :style="{ transitionDelay: i * 60 + 'ms' }">
+            <div
+              v-for="(item, i) in sideFeatures"
+              :key="i"
+              class="side-card card-modern js-panel-in"
+            >
               <div class="side-card-icon" :class="item.iconClass">
                 <i :class="item.icon"></i>
               </div>
@@ -122,11 +136,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { animate, createTimeline, stagger, createSpring } from 'animejs'
+import { animate, createTimeline, stagger, spring } from 'animejs'
 import { usePdfToDocxConverter } from '@/composables/useApi'
-const { loading, error, progress, ConvertToDocx } = usePdfToDocxConverter()
 
-const maxSizeMb = 20 // chỉnh theo giới hạn thật của BE nếu khác
+const { loading, error, ConvertToDocx } = usePdfToDocxConverter()
+
+const maxSizeMb = 20
 const fileInput = ref(null)
 const fileCardEl = ref(null)
 const successEl = ref(null)
@@ -140,6 +155,12 @@ const formattedSize = computed(() => {
   const kb = selectedFile.value.size / 1024
   return kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`
 })
+
+function onDropZoneClick() {
+  if (selectedFile.value) return
+  // Phải gọi trực tiếp trong handler click (user activation)
+  fileInput.value?.click()
+}
 
 function pickFile(file) {
   if (!file) return
@@ -155,14 +176,13 @@ function pickFile(file) {
   justFinished.value = false
   selectedFile.value = file
 
-  // Hiệu ứng file-card vừa xuất hiện: nảy nhẹ bằng spring cho có cảm giác "bắt được" file
   requestAnimationFrame(() => {
     if (fileCardEl.value) {
       animate(fileCardEl.value, {
-        scale: [0.85, 1],
+        scale: [0.9, 1],
         opacity: [0, 1],
-        duration: 500,
-        ease: createSpring({ stiffness: 280, damping: 18 })
+        duration: 420,
+        ease: spring({ bounce: 0.3, duration: 420 })
       })
     }
   })
@@ -170,6 +190,7 @@ function pickFile(file) {
 
 function onFileChosen(e) {
   pickFile(e.target.files?.[0])
+  e.target.value = ''
 }
 
 function onDrop(e) {
@@ -186,54 +207,56 @@ function removeFile() {
 async function handleConvert() {
   if (!selectedFile.value || loading.value) return
   justFinished.value = false
-  const ok = await ConvertToDocx({ file: selectedFile.value })
-  if (ok) {
-    justFinished.value = true
-    requestAnimationFrame(() => {
-      if (successEl.value) {
-        animate(successEl.value, {
-          opacity: [0, 1],
-          translateY: [-8, 0],
-          duration: 400,
-          ease: 'outQuad'
-        })
-      }
-    })
+  try {
+    // Chữ ký đúng: (file, startPage?, endPage?)
+    const ok = await ConvertToDocx(selectedFile.value)
+    if (ok) {
+      justFinished.value = true
+      requestAnimationFrame(() => {
+        if (successEl.value) {
+          animate(successEl.value, {
+            opacity: [0, 1],
+            translateY: [-8, 0],
+            duration: 400,
+            ease: 'outQuad'
+          })
+        }
+      })
+    }
+  } catch (_) {
+    /* error đã set trong useApi */
   }
-}
-
-function pressBtn(e) {
-  animate(e.currentTarget, { scale: 0.97, duration: 100, ease: 'outQuad' })
-}
-function releaseBtn(e) {
-  animate(e.currentTarget, { scale: 1, duration: 450, ease: createSpring({ stiffness: 300, damping: 15 }) })
 }
 
 const sideFeatures = ref([
   {
     icon: 'bi bi-layout-text-window-reverse',
     iconClass: 'bg-gradient-primary',
-    title: 'Giữ nguyên bố cục',
-    desc: 'Đoạn văn, tiêu đề, bảng biểu được trích xuất về gần đúng với file PDF gốc nhất có thể'
+    title: 'Giữ bố cục',
+    desc: 'Đoạn văn, tiêu đề, bảng được giữ gần với PDF gốc'
   },
   {
     icon: 'bi bi-pencil-square',
     iconClass: 'bg-gradient-ocean',
-    title: 'Chỉnh sửa được ngay',
-    desc: 'File .docx mở được trong Word / Google Docs, sửa nội dung như tài liệu thường'
+    title: 'Sửa được ngay',
+    desc: 'Mở .docx trong Word hoặc Google Docs'
   },
   {
     icon: 'bi bi-shield-check',
     iconClass: 'bg-gradient-teal',
-    title: 'Không lưu trữ file',
-    desc: 'File PDF chỉ dùng để xử lý ngay lúc chuyển đổi, không giữ lại trên máy chủ'
+    title: 'Không lưu file',
+    desc: 'PDF chỉ dùng lúc xử lý, không giữ trên máy chủ'
   }
 ])
 
 onMounted(() => {
   createTimeline({ defaults: { ease: 'outExpo' } })
     .add('.js-hero-in', { opacity: [0, 1], translateY: [-12, 0], duration: 550 })
-    .add('.js-panel-in', { opacity: [0, 1], translateY: [20, 0], duration: 550, delay: stagger(90) }, '-=300')
+    .add(
+      '.js-panel-in',
+      { opacity: [0, 1], translateY: [20, 0], duration: 550, delay: stagger(90) },
+      '-=300'
+    )
 })
 </script>
 
@@ -241,18 +264,15 @@ onMounted(() => {
 .pdftodocx-page {
   padding-bottom: 4rem;
 }
-
 .tool-hero {
   padding: 2.5rem 0 2rem;
 }
-
 .tool-hero-inner {
   max-width: 640px;
   margin: 0 auto;
   text-align: center;
   opacity: 0;
 }
-
 .tool-breadcrumb {
   display: inline-flex;
   align-items: center;
@@ -262,11 +282,9 @@ onMounted(() => {
   color: var(--docforge-gray);
   margin-bottom: 1.25rem;
 }
-
 .tool-breadcrumb .current {
   color: var(--docforge-base);
 }
-
 .tool-hero-icon {
   width: 64px;
   height: 64px;
@@ -275,40 +293,34 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  color: var(--docforge-white);
+  color: #fff;
   margin: 0 auto 1.25rem;
   box-shadow: var(--docforge-shadow-lg);
 }
-
 .tool-hero-title {
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 800;
   margin-bottom: 0.75rem;
 }
-
 .tool-hero-subtitle {
   color: var(--docforge-gray);
   font-size: 1.05rem;
   line-height: 1.7;
 }
-
 .tool-grid {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 2rem;
   align-items: start;
 }
-
 .tool-main {
   padding: 2rem;
   border-radius: 20px;
 }
-
 .js-panel-in {
   opacity: 0;
 }
 
-/* Drop zone */
 .drop-zone {
   border: 2px dashed var(--docforge-bdr-color);
   border-radius: 16px;
@@ -316,50 +328,43 @@ onMounted(() => {
   text-align: center;
   cursor: pointer;
   transition: var(--docforge-transition);
-  position: relative;
 }
-
 .drop-zone:hover,
 .drop-zone-active {
   border-color: var(--docforge-ocean);
   background: var(--docforge-gradient-light);
 }
-
 .drop-zone-has-file {
   cursor: default;
   padding: 1.25rem;
 }
-
-.drop-zone-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.drop-zone-has-file .drop-zone-input {
-  display: none;
-}
-
 .drop-zone-icon {
   font-size: 2.75rem;
   color: var(--docforge-ocean);
   margin-bottom: 0.75rem;
 }
-
 .drop-zone-title {
   font-weight: 700;
   font-size: 1.05rem;
   margin-bottom: 0.25rem;
 }
-
 .drop-zone-hint {
   color: var(--docforge-gray);
   font-size: 13px;
   margin: 0;
 }
 
-/* File card */
+.sr-only-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
 .file-card {
   display: flex;
   align-items: center;
@@ -370,25 +375,22 @@ onMounted(() => {
   border-radius: 12px;
   text-align: left;
 }
-
 .file-card-icon {
   width: 44px;
   height: 44px;
   border-radius: 10px;
   background: var(--docforge-gradient-sunset);
-  color: var(--docforge-white);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
   flex-shrink: 0;
 }
-
 .file-card-info {
   flex: 1;
   min-width: 0;
 }
-
 .file-card-name {
   font-weight: 600;
   font-size: 14px;
@@ -396,12 +398,10 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .file-card-size {
   font-size: 12px;
   color: var(--docforge-gray);
 }
-
 .file-card-remove {
   width: 32px;
   height: 32px;
@@ -413,10 +413,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: var(--docforge-transition);
 }
-
 .file-card-remove:hover {
   background: #fee2e2;
   color: #ef4444;
@@ -433,24 +430,35 @@ onMounted(() => {
 }
 
 .convert-progress {
-  margin-top: 1.25rem;
+  margin: 1.25rem 0 0.5rem;
 }
-
 .convert-progress-track {
   height: 8px;
   border-radius: 4px;
   background: var(--docforge-bdr-color);
   overflow: hidden;
   margin-bottom: 0.4rem;
+  position: relative;
 }
-
-.convert-progress-fill {
+/* Thanh chạy qua lại — không giả % */
+.convert-progress-indeterminate {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  background: var(--docforge-gradient-ocean);
+  width: 40%;
   border-radius: 4px;
-  transition: width 0.25s ease;
+  background: var(--docforge-gradient-ocean);
+  animation: indet 1.1s ease-in-out infinite;
 }
-
+@keyframes indet {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
 .convert-progress-text {
   font-size: 12px;
   color: var(--docforge-gray);
@@ -465,37 +473,18 @@ onMounted(() => {
   font-weight: 700;
   font-size: 14px;
   margin-top: 1rem;
-  opacity: 0;
 }
-
 .convert-btn {
-  margin-top: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.convert-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* Side features */
-.tool-side {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  margin-top: 1.25rem;
 }
 
 .side-card {
   display: flex;
   gap: 1rem;
-  padding: 1.25rem;
-  border-radius: 16px;
+  padding: 1.15rem;
+  margin-bottom: 1rem;
+  border-radius: 14px;
 }
-
 .side-card-icon {
   width: 44px;
   height: 44px;
@@ -503,32 +492,25 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  color: var(--docforge-white);
+  color: #fff;
+  font-size: 18px;
   flex-shrink: 0;
 }
-
 .side-card-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  margin-bottom: 0.25rem;
+  margin: 0 0 0.25rem;
 }
-
 .side-card-desc {
   font-size: 13px;
   color: var(--docforge-gray);
-  line-height: 1.6;
   margin: 0;
+  line-height: 1.5;
 }
 
 @media (max-width: 991.98px) {
   .tool-grid {
     grid-template-columns: 1fr;
   }
-}
-
-@media (max-width: 575.98px) {
-  .tool-main { padding: 1.25rem; }
-  .drop-zone { padding: 1.75rem 1rem; }
 }
 </style>

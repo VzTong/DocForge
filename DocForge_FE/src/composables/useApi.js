@@ -173,24 +173,37 @@ export function useMdToPdfConverter() {
   }
 
   /** Render preview PDF (inline) từ nội dung Markdown, trả về Object URL để nhúng iframe */
-  const Preview = (mdContent, theme, pageSize) => {
+    const Preview = (mdContent, theme, pageSize) => {
     return execute(async () => {
       const res = await fetch(`${PY_SERVICE_URL}/preview/md-to-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: mdContent,
-          theme,
-          page_size: pageSize
+          theme: theme || 'document',
+          page_size: pageSize || 'A4'
         })
       })
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.detail || `Preview thất bại: ${res.statusText}`)
+        // FastAPI: detail có thể là string HOẶC mảng validation
+        let msg = `Preview thất bại (${res.status})`
+        if (typeof errData.detail === 'string') {
+          msg = errData.detail
+        } else if (Array.isArray(errData.detail)) {
+          msg = errData.detail
+            .map((d) => d.msg || JSON.stringify(d))
+            .join('; ')
+        }
+        throw new Error(msg)
       }
 
       const blob = await res.blob()
+      // Một số proxy trả HTML lỗi dạng blob — chặn sớm
+      if (blob.type && blob.type.includes('text/html')) {
+        throw new Error('Server trả HTML thay vì PDF — kiểm tra WeasyPrint / dependency BE')
+      }
       return URL.createObjectURL(blob)
     }, { showLoading: false })
   }
