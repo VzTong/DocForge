@@ -1,46 +1,38 @@
 <template>
   <Teleport to="body">
     <div v-if="isLoading" class="page-loader" :class="{ 'fade-out': fadeOut }">
-      <!-- Background -->
       <div class="loader-bg"></div>
-
-      <!-- Animated Gradient Background -->
       <div class="loader-gradient-bg"></div>
-
-      <!-- Floating Elements -->
       <div class="floating-shapes">
         <div class="shape shape-1"></div>
         <div class="shape shape-2"></div>
         <div class="shape shape-3"></div>
         <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
       </div>
 
-      <!-- Main Content -->
       <div class="loader-content">
-        <!-- Logo Animation -->
         <div class="loader-logo">
-          <div class="logo-icon bg-gradient-sunset">
-            <i class="bi bi-file-earmark-arrow-down-fill"></i>
+          <div class="logo-icon">
+            <img src="/favicon.ico" alt="DocForge" class="logo-icon-img" />
           </div>
           <div class="logo-text">
-            <div class="brand-name text-gradient-primary">{{ loadingText }}</div>
-            <div class="brand-tagline text-gradient-ocean">Premium DocForge Service</div>
+            <div class="brand-name">DOCFORGE</div>
+            <div class="brand-tagline">Premium Document Solution</div>
           </div>
         </div>
 
-        <!-- Modern Spinner -->
         <div class="loader-spinner-container">
           <div class="modern-spinner">
             <div class="spinner-ring ring-1"></div>
             <div class="spinner-ring ring-2"></div>
             <div class="spinner-ring ring-3"></div>
             <div class="spinner-center">
-              <i class="bi bi-lightning-charge"></i>
+              <i class="bi bi-lightning-charge-fill"></i>
             </div>
           </div>
         </div>
 
-        <!-- Progress Bar -->
         <div class="loader-progress">
           <div class="progress-track">
             <div class="progress-fill" :style="{ width: progress + '%' }"></div>
@@ -49,7 +41,6 @@
           <div class="progress-text">{{ Math.round(progress) }}%</div>
         </div>
 
-        <!-- Loading Text -->
         <div class="loader-message">
           <div class="message-text">{{ currentMessage }}</div>
           <div class="message-dots">
@@ -66,27 +57,15 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
-const props = defineProps({
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  text: {
-    type: String,
-    default: 'DOCFORGE'
-  }
-})
-
 const isLoading = ref(true)
 const fadeOut = ref(false)
-const loadingText = ref(props.text)
 const progress = ref(0)
 const currentMessage = ref('Đang khởi tạo...')
 
 const loadingMessages = [
   'Đang khởi tạo...',
-  'Đang tải dữ liệu...',
-  'Đang chuẩn bị giao diện...',
+  'Đang tải giao diện...',
+  'Đang chuẩn bị công cụ...',
   'Gần xong rồi...',
   'Hoàn thành!'
 ]
@@ -94,50 +73,35 @@ const loadingMessages = [
 let progressInterval
 let messageInterval
 
-// Simulate realistic loading progress
 const simulateProgress = () => {
   let messageIndex = 0
-
   progressInterval = setInterval(() => {
-    // Slower progress at the beginning, faster at the end
-    if (progress.value < 20) {
-      progress.value += Math.random() * 8 + 2
-    } else if (progress.value < 80) {
-      progress.value += Math.random() * 15 + 5
-    } else if (progress.value < 95) {
-      progress.value += Math.random() * 5 + 2
-    } else {
-      progress.value = 100
-    }
+    if (progress.value < 25) progress.value += Math.random() * 10 + 3
+    else if (progress.value < 70) progress.value += Math.random() * 12 + 4
+    else if (progress.value < 95) progress.value += Math.random() * 4 + 1.5
+    else progress.value = 100
 
     if (progress.value >= 100) {
       progress.value = 100
       currentMessage.value = loadingMessages[loadingMessages.length - 1]
       clearInterval(progressInterval)
       clearInterval(messageInterval)
-
       setTimeout(() => {
         fadeOut.value = true
-        setTimeout(() => {
-          isLoading.value = false
-        }, 800)
-      }, 800)
+        setTimeout(() => { isLoading.value = false }, 700)
+      }, 400)
     }
-  }, 150)
+  }, 110)
 
-  // Change loading messages
   messageInterval = setInterval(() => {
     if (messageIndex < loadingMessages.length - 1) {
       currentMessage.value = loadingMessages[messageIndex]
       messageIndex++
     }
-  }, 1000)
+  }, 650)
 }
 
-onMounted(() => {
-  simulateProgress()
-})
-
+onMounted(simulateProgress)
 onBeforeUnmount(() => {
   if (progressInterval) clearInterval(progressInterval)
   if (messageInterval) clearInterval(messageInterval)
@@ -145,134 +109,65 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* Modern Page Loader */
 .page-loader {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1), transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .page-loader.fade-out {
   opacity: 0;
-  transform: scale(1.1);
+  transform: scale(1.05);
+  pointer-events: none;
 }
-
-/* Background Layers */
 .loader-bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--carrental-white);
+  inset: 0;
+  background: #0b1220;
   z-index: 1;
 }
-
 .loader-gradient-bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    135deg,
-    rgba(248, 250, 252, 0.95) 0%,
-    rgba(30, 64, 175, 0.1) 25%,
-    rgba(8, 145, 178, 0.1) 50%,
-    rgba(253, 85, 35, 0.1) 75%,
-    rgba(248, 250, 252, 0.95) 100%
-  );
-  animation: gradientShift 6s ease-in-out infinite;
+  inset: 0;
   z-index: 2;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 20%, rgba(253, 85, 35, 0.35), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 90% 15%, rgba(59, 130, 246, 0.3), transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(34, 211, 238, 0.22), transparent 50%),
+    linear-gradient(160deg, #0b1220 0%, #1e1b4b 45%, #0f172a 100%);
+  animation: meshPulse 6s ease-in-out infinite;
 }
-
-@keyframes gradientShift {
-  0%, 100% {
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    transform: rotate(180deg) scale(1.1);
-  }
+@keyframes meshPulse {
+  0%, 100% { filter: hue-rotate(0deg) saturate(1); }
+  50% { filter: hue-rotate(12deg) saturate(1.15); }
 }
-
-/* Floating Shapes */
 .floating-shapes {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 3;
+  pointer-events: none;
   overflow: hidden;
 }
-
 .shape {
   position: absolute;
   border-radius: 50%;
-  background: var(--carrental-gradient-ocean);
-  animation: floatAround 8s ease-in-out infinite;
+  filter: blur(1px);
+  animation: floatAround 10s ease-in-out infinite;
 }
-
-.shape-1 {
-  width: 100px;
-  height: 100px;
-  top: 20%;
-  left: 10%;
-  background: var(--carrental-gradient-primary);
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 150px;
-  height: 150px;
-  top: 60%;
-  right: 15%;
-  background: var(--carrental-gradient-ocean);
-  animation-delay: 2s;
-}
-
-.shape-3 {
-  width: 80px;
-  height: 80px;
-  bottom: 20%;
-  left: 20%;
-  background: var(--carrental-gradient-teal);
-  animation-delay: 4s;
-}
-
-.shape-4 {
-  width: 120px;
-  height: 120px;
-  top: 10%;
-  right: 30%;
-  background: var(--carrental-gradient-sunset);
-  animation-delay: 1s;
-}
-
+.shape-1 { width: 140px; height: 140px; top: 10%; left: 6%; background: linear-gradient(135deg, #fd5523, #fb923c); opacity: 0.45; }
+.shape-2 { width: 180px; height: 180px; top: 50%; right: 6%; background: linear-gradient(135deg, #2563eb, #22d3ee); opacity: 0.35; animation-delay: 1.2s; }
+.shape-3 { width: 100px; height: 100px; bottom: 14%; left: 20%; background: linear-gradient(135deg, #a78bfa, #22d3ee); opacity: 0.4; animation-delay: 2.4s; }
+.shape-4 { width: 120px; height: 120px; top: 12%; right: 24%; background: linear-gradient(135deg, #fd5523, #7c3aed); opacity: 0.32; animation-delay: 0.6s; }
+.shape-5 { width: 72px; height: 72px; bottom: 28%; right: 38%; background: linear-gradient(135deg, #22d3ee, #34d399); opacity: 0.4; animation-delay: 1.8s; }
 @keyframes floatAround {
-  0%, 100% {
-    transform: translateY(0px) translateX(0px) rotate(0deg);
-    opacity: 0.6;
-  }
-  33% {
-    transform: translateY(-30px) translateX(20px) rotate(120deg);
-    opacity: 0.8;
-  }
-  66% {
-    transform: translateY(20px) translateX(-30px) rotate(240deg);
-    opacity: 0.4;
-  }
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(20px, -30px) rotate(100deg); }
+  66% { transform: translate(-18px, 14px) rotate(220deg); }
 }
-
-/* Main Content */
 .loader-content {
   position: relative;
   z-index: 4;
@@ -280,343 +175,144 @@ onBeforeUnmount(() => {
   max-width: 400px;
   padding: 2rem;
 }
-
-/* Logo Animation */
 .loader-logo {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 3rem;
-  animation: logoFloat 3s ease-in-out infinite;
+  margin-bottom: 2.25rem;
+  animation: logoFloat 2.6s ease-in-out infinite;
 }
-
 @keyframes logoFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
-
 .logo-icon {
-  width: 70px;
-  height: 70px;
+  width: 72px;
+  height: 72px;
   border-radius: 20px;
+  padding: 14px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #fd5523, #1e40af);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 16px 40px rgba(253, 85, 35, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  color: var(--carrental-white);
-  box-shadow: var(--carrental-shadow-xl);
-  animation: iconSpin 4s linear infinite;
 }
-
-@keyframes iconSpin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
+.logo-icon-img { width: 100%; height: 100%; object-fit: contain; }
+.logo-text { text-align: left; }
 .brand-name {
-  font-size: 2.5rem;
+  font-size: 2.35rem;
   font-weight: 800;
   letter-spacing: -1px;
   line-height: 1;
-  font-family: var(--carrental-font-two);
-  animation: textGlow 2s ease-in-out infinite alternate;
+  background: linear-gradient(90deg, #fd5523, #fb923c, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-
-@keyframes textGlow {
-  0% {
-    filter: brightness(1);
-  }
-  100% {
-    filter: brightness(1.2);
-  }
-}
-
 .brand-tagline {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 2px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
   text-transform: uppercase;
-  margin-top: 4px;
-  opacity: 0.8;
+  color: #67e8f9;
 }
-
-/* Modern Spinner */
-.loader-spinner-container {
-  margin-bottom: 3rem;
-  display: flex;
-  justify-content: center;
-}
-
-.modern-spinner {
-  position: relative;
-  width: 100px;
-  height: 100px;
-}
-
+.loader-spinner-container { margin-bottom: 2rem; display: flex; justify-content: center; }
+.modern-spinner { position: relative; width: 110px; height: 110px; }
 .spinner-ring {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   border-radius: 50%;
   border: 3px solid transparent;
 }
-
-.ring-1 {
-  border-top-color: var(--carrental-base);
-  animation: spin 2s linear infinite;
-}
-
-.ring-2 {
-  border-right-color: var(--carrental-ocean);
-  animation: spin 3s linear infinite reverse;
-  transform: scale(0.8);
-}
-
-.ring-3 {
-  border-bottom-color: var(--carrental-teal);
-  animation: spin 4s linear infinite;
-  transform: scale(0.6);
-}
-
+.ring-1 { border-top-color: #fd5523; border-right-color: rgba(253,85,35,0.2); animation: spin 1.5s linear infinite; }
+.ring-2 { border-right-color: #3b82f6; border-bottom-color: rgba(59,130,246,0.2); transform: scale(0.78); animation: spin 2.3s linear infinite reverse; }
+.ring-3 { border-bottom-color: #22d3ee; border-left-color: rgba(34,211,238,0.2); transform: scale(0.56); animation: spin 3s linear infinite; }
 .spinner-center {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  background: var(--carrental-gradient-sunset);
+  width: 44px; height: 44px;
   border-radius: 50%;
+  background: linear-gradient(135deg, #fd5523, #7c3aed);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--carrental-white);
-  font-size: 20px;
-  animation: centerPulse 1.5s ease-in-out infinite;
+  font-size: 18px;
+  box-shadow: 0 0 24px rgba(253, 85, 35, 0.55);
+  animation: centerPulse 1.35s ease-in-out infinite;
 }
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
+@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes centerPulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.1);
-  }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
 }
-
-/* Progress Bar */
-.loader-progress {
-  margin-bottom: 2rem;
-}
-
 .progress-track {
   position: relative;
-  width: 100%;
-  height: 6px;
-  background: var(--carrental-bdr-color);
-  border-radius: 3px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
   overflow: hidden;
   margin-bottom: 0.5rem;
 }
-
 .progress-fill {
   height: 100%;
-  background: var(--carrental-gradient-primary);
-  border-radius: 3px;
-  transition: width 0.3s ease;
-  position: relative;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fd5523, #f97316, #22d3ee, #a78bfa);
+  background-size: 220% 100%;
+  animation: barShine 1.6s linear infinite;
+  transition: width 0.18s ease;
 }
-
+@keyframes barShine {
+  0% { background-position: 0% 0; }
+  100% { background-position: 220% 0; }
+}
 .progress-glow {
   position: absolute;
   top: 0;
-  width: 20px;
+  width: 28px;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
   transform: translateX(-50%);
-  animation: progressGlow 2s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
 }
-
-@keyframes progressGlow {
-  0%, 100% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 .progress-text {
   font-size: 14px;
-  font-weight: 700;
-  color: var(--carrental-black);
-  text-align: center;
+  font-weight: 800;
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
 }
-
-/* Loading Message */
 .loader-message {
+  margin-top: 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.65rem;
 }
-
-.message-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--carrental-black);
-  animation: messageSlide 0.5s ease-in-out;
+.message-text { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+.message-dots { display: flex; gap: 5px; }
+.message-dots .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  animation: dotBounce 1.25s ease-in-out infinite;
 }
-
-@keyframes messageSlide {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.message-dots {
-  display: flex;
-  gap: 4px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--carrental-base);
-  animation: dotBounce 1.4s ease-in-out infinite;
-}
-
-.dot:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
+.message-dots .dot:nth-child(1) { background: #fd5523; }
+.message-dots .dot:nth-child(2) { background: #3b82f6; animation-delay: 0.15s; }
+.message-dots .dot:nth-child(3) { background: #22d3ee; animation-delay: 0.3s; }
 @keyframes dotBounce {
-  0%, 80%, 100% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+  40% { transform: scale(1.25); opacity: 1; }
 }
-
-/* Responsive Design */
 @media (max-width: 768px) {
-  .loader-content {
-    padding: 1rem;
-    max-width: 300px;
-  }
-
-  .loader-logo {
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .logo-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 28px;
-  }
-
-  .brand-name {
-    font-size: 2rem;
-    text-align: center;
-  }
-
-  .brand-tagline {
-    text-align: center;
-  }
-
-  .modern-spinner {
-    width: 80px;
-    height: 80px;
-  }
-
-  .spinner-center {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-  }
-
-  .shape {
-    display: none;
-  }
+  .loader-logo { flex-direction: column; }
+  .logo-text { text-align: center; }
+  .brand-name { font-size: 1.9rem; }
+  .shape-5 { display: none; }
 }
-
-@media (max-width: 480px) {
-  .brand-name {
-    font-size: 1.75rem;
+@media (prefers-reduced-motion: reduce) {
+  .loader-gradient-bg, .shape, .loader-logo, .spinner-ring, .spinner-center, .progress-fill, .message-dots .dot {
+    animation: none !important;
   }
-
-  .brand-tagline {
-    font-size: 12px;
-  }
-
-  .modern-spinner {
-    width: 60px;
-    height: 60px;
-  }
-
-  .spinner-center {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
-  }
-}
-
-/* Dark Theme Support */
-[data-theme="dark"] .loader-bg {
-  background: #1e293b;
-}
-
-[data-theme="dark"] .progress-track {
-  background: #374151;
-}
-
-[data-theme="dark"] .progress-text,
-[data-theme="dark"] .message-text {
-  color: #f1f5f9;
 }
 </style>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <title>Nguyễn Văn A</title>
+        <style>/* ------------------------------------------------------------------
+   CV / Resume Theme
+   ------------------------------------------------------------------
+   A clean, minimal resume layout — not a Word-style document.
+   Designed for A4 PDF output with a professional, readable look.
+   ------------------------------------------------------------------ */
+
+@page {
+    size: A4;
+    margin: 2.5cm 2cm 2.5cm 2cm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #222;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------- Header ---------- */
+
+.cv-container {
+    max-width: 100%;
+}
+
+.cv-header {
+    text-align: center;
+    margin-bottom: 0;
+    padding-bottom: 12px;
+}
+
+.cv-header h1 {
+    font-size: 28pt;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.cv-subtitle {
+    font-size: 13pt;
+    margin: 0 0 2px 0;
+    color: #444;
+    font-weight: 400;
+}
+
+.cv-subtitle p,
+.cv-contact p {
+    margin: 0;
+}
+
+.cv-contact {
+    font-size: 10pt;
+    margin: 0;
+    color: #666;
+}
+
+.cv-address,
+.cv-links {
+    font-size: 10pt;
+    margin: 1px 0 0 0;
+    color: #666;
+}
+
+.cv-links a {
+    color: #444;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+
+.cv-links a:hover {
+    border-bottom-color: #444;
+}
+
+/* ---------- Horizontal rule ---------- */
+
+hr {
+    border: none;
+    border-top: 2px solid #444;
+    margin: 16px 0;
+}
+
+/* ---------- Section headings ---------- */
+
+h2 {
+    border-left: 4px solid #444;
+    padding-left: 10px;
+    font-size: 14pt;
+    margin: 20px 0 8px 0;
+    color: #222;
+}
+
+h3 {
+    font-size: 12pt;
+    margin: 12px 0 4px 0;
+    color: #333;
+}
+
+/* ---------- Body content ---------- */
+
+.cv-body p {
+    margin: 4px 0;
+}
+
+.cv-body ul {
+    margin: 4px 0;
+    padding-left: 20px;
+}
+
+.cv-body li {
+    margin: 2px 0;
+}
+
+/* ---------- Tables (if any) ---------- */
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0;
+}
+
+th, td {
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #444;
+    color: white;
+}
+
+/* ---------- Print ---------- */
+
+@media print {
+    body {
+        font-size: 10pt;
+    }
+}</style>
+    </head>
+    <body>
+        <div class="cv-container">
+            <header class="cv-header">
+                <h1>Nguyễn Văn A</h1>
+                <div class="cv-subtitle">Backend Developer</div>
+                <div class="cv-contact">email@example.com  |  0909 123 456</div>
+                <div class="cv-contact cv-address"><ul>
+<li>Vai trò: Backend Developer</li>
+</ul></div>
+                <div class="cv-contact cv-links"><ul>
+<li>Email: nva@example.com</li>
+</ul></div>
+            </header>
+            <main class="cv-body">
+                <h2>Kỹ năng</h2>
+<table>
+<thead>
+<tr>
+<th>Kỹ năng</th>
+<th>Mức độ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>5/5</td>
+</tr>
+<tr>
+<td>FastAPI</td>
+<td>4/5</td>
+</tr>
+<tr>
+<td>Markdown</td>
+<td>4/5</td>
+</tr>
+</tbody>
+</table>
+<h2>Mẫu code</h2>
+<pre><code class="language-python">def hello(name: str) -&gt; str:
+    return f&quot;Hello, {name}!&quot;
+</code></pre>
+<h2>Ghi chú</h2>
+<p>Đây là file Markdown mẫu để test chức năng chuyển đổi sang HTML/PDF.</p>
+            </main>
+        </div>
+    </body>
+</html>

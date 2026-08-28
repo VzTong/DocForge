@@ -1,61 +1,22 @@
 <template>
-  <div class="carrental-header">
-    <!-- Modern Top Info Bar -->
-    <div class="main-menu__top">
-      <div class="container-fluid">
-        <div class="main-menu__top-inner">
-          <!-- Contact Info -->
-          <!-- <div class="main-menu__contact">
-            <div class="contact-item">
-              <i class="bi bi-telephone-fill text-ocean"></i>
-              <a href="tel:+84281234567" class="contact-link">+84 (028) 123 4567</a>
-            </div>
-            <div class="contact-item">
-              <i class="bi bi-envelope-fill text-teal"></i>
-              <a href="mailto:info@carrental.vn" class="contact-link">info@carrental.vn</a>
-            </div>
-            <div class="contact-item d-none d-lg-flex">
-              <i class="bi bi-geo-alt-fill text-cyan"></i>
-              <span class="contact-text">123 Đường ABC, Quận 1, TP.HCM</span>
-            </div>
-          </div> -->
-
-          <!-- Welcome Message -->
-          <div class="welcome-text d-none d-md-block">
-            <span class="text-gradient-ocean">Chào mừng đến với Forge Doc</span>
-          </div>
-
-          <!-- Top Right Actions -->
-          <div class="main-menu__top-right">
-            <!-- <div class="operating-hours d-none d-lg-flex">
-              <i class="bi bi-clock-fill text-ocean"></i>
-              <span>T2 - CN: 06:00 - 22:00</span>
-            </div> -->
-            <div class="social-links">
-              <a href="#" class="social-link hover-glow-ocean"><i class="bi bi-facebook"></i></a>
-              <a href="#" class="social-link hover-glow"><i class="bi bi-instagram"></i></a>
-              <a href="#" class="social-link hover-glow-ocean"><i class="bi bi-twitter"></i></a>
-              <a href="#" class="social-link hover-glow"><i class="bi bi-linkedin"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modern Main Navigation -->
-    <nav class="main-menu" ref="navbar" :class="{ 'scrolled': isScrolled, 'mobile-open': mobileMenuOpen }">
+  <div class="docforge-header">
+    <nav
+      class="main-menu"
+      ref="navbar"
+      :class="{ scrolled: isScrolled, 'mobile-open': mobileMenuOpen }"
+    >
       <div class="container-fluid">
         <div class="main-menu__wrapper">
           <!-- Modern Logo -->
           <div class="main-menu__logo">
-            <router-link to="/" class="brand-link">
+            <router-link to="/" class="brand-link" @click="closeMobileMenu">
               <div class="brand-container">
                 <div class="brand-icon bg-gradient-sunset">
-                  <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                  <img src="/favicon.ico" alt="DocForge" class="brand-icon-img" />
                 </div>
                 <div class="brand-text">
                   <div class="brand-name text-gradient-primary">DOCFORGE</div>
-                  <div class="brand-tagline text-ocean">Premium Document Solution</div>
+                  <div class="brand-tagline text-ocean">Document Solution</div>
                 </div>
               </div>
             </router-link>
@@ -63,16 +24,18 @@
 
           <!-- Mobile Menu Toggle -->
           <button
+            type="button"
             class="mobile-nav__toggler"
+            :class="{ active: mobileMenuOpen }"
+            :aria-expanded="mobileMenuOpen"
+            aria-label="Mở / đóng menu"
             @click="toggleMobileMenu"
-            :class="{ 'active': mobileMenuOpen }"
           >
             <span></span>
             <span></span>
             <span></span>
           </button>
 
-          <!-- Navigation Menu -->
           <div class="main-menu__nav" :class="{ 'mobile-active': mobileMenuOpen }">
             <ul class="main-menu__list">
               <li class="nav-item">
@@ -82,40 +45,82 @@
                 </router-link>
               </li>
 
-              <li class="nav-item dropdown" @mouseenter="showDropdown" @mouseleave="hideDropdown">
-                <a href="#" class="nav-link" @click.prevent>
+              <li
+                class="nav-item dropdown"
+                @mouseenter="showDropdown"
+                @mouseleave="hideDropdown"
+              >
+                <a
+                  href="#"
+                  class="nav-link"
+                  @click.prevent="toggleDropdownMobile"
+                >
                   <i class="bi bi-grid nav-icon"></i>
                   <span>Công cụ</span>
-                  <i class="bi bi-chevron-down dropdown-icon"></i>
+                  <i
+                    class="bi bi-chevron-down dropdown-icon"
+                    :class="{ rotated: isDropdownOpen }"
+                  ></i>
                 </a>
-                <ul class="dropdown-menu card-modern" :class="{ 'show': isDropdownOpen }">
-                  <li><router-link to="/convert" class="dropdown-link">
-                    <i class="bi bi-file-earmark-pdf"></i>Markdown → PDF
-                  </router-link></li>
-                  <li><span class="dropdown-link dropdown-link-soon">
-                    <i class="bi bi-file-earmark-word"></i>PDF → Word
-                    <span class="soon-badge">Sắp có</span>
-                  </span></li>
-                  <li><span class="dropdown-link dropdown-link-soon">
-                    <i class="bi bi-markdown"></i>PDF → Markdown
-                    <span class="soon-badge">Sắp có</span>
-                  </span></li>
-                  <li><span class="dropdown-link dropdown-link-soon">
-                    <i class="bi bi-file-earmark-pdf"></i>Word → PDF
-                    <span class="soon-badge">Sắp có</span>
-                  </span></li>
+                <ul class="dropdown-menu card-modern" :class="{ show: isDropdownOpen }">
+                  <li>
+                    <router-link
+                      to="/convert/md-to-pdf"
+                      class="dropdown-link"
+                      @click="closeMobileMenu"
+                    >
+                      <i class="bi bi-file-earmark-pdf"></i>
+                      <span>Markdown → PDF</span>
+                      <span class="ready-badge">Dùng ngay</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link
+                      to="/convert/pdf-to-docx"
+                      class="dropdown-link"
+                      @click="closeMobileMenu"
+                    >
+                      <i class="bi bi-file-earmark-word"></i>
+                      <span>PDF → Word</span>
+                      <span class="ready-badge">Dùng ngay</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link
+                      to="/convert/audio-to-text"
+                      class="dropdown-link"
+                      @click="closeMobileMenu"
+                    >
+                      <i class="bi bi-mic"></i>
+                      <span>Âm thanh → Văn bản</span>
+                      <span class="ready-badge">Dùng ngay</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <span class="dropdown-link dropdown-link-soon">
+                      <i class="bi bi-camera-video"></i>
+                      <span>Video → Transcript</span>
+                      <span class="soon-badge">Sắp có</span>
+                    </span>
+                  </li>
+                  <li>
+                    <span class="dropdown-link dropdown-link-soon">
+                      <i class="bi bi-translate"></i>
+                      <span>Dịch transcript (AI)</span>
+                      <span class="soon-badge">Sắp có</span>
+                    </span>
+                  </li>
                 </ul>
               </li>
 
               <li class="nav-item">
-                <a href="#about" class="nav-link">
+                <a href="#about" class="nav-link" @click="closeMobileMenu">
                   <i class="bi bi-info-circle nav-icon"></i>
                   <span>Về chúng tôi</span>
                 </a>
               </li>
-
               <li class="nav-item">
-                <a href="#contact" class="nav-link">
+                <a href="#contact" class="nav-link" @click="closeMobileMenu">
                   <i class="bi bi-telephone nav-icon"></i>
                   <span>Liên hệ</span>
                 </a>
@@ -125,241 +130,145 @@
 
           <!-- Modern Action Buttons -->
           <div class="main-menu__actions">
-            <!-- Cart Button
-            <button class="action-btn cart-btn hover-lift" @click="openCart" :title="'Giỏ hàng (' + cartCount + ')'">
-              <i class="bi bi-bag"></i>
-              <span class="action-count bg-gradient-primary" v-if="cartCount > 0">{{ cartCount }}</span>
-            </button> -->
-
-            <!-- Wishlist Button -->
-            <!-- <button class="action-btn wishlist-btn hover-lift" @click="openWishlist" :title="'Yêu thích (' + wishlistCount + ')'">
-              <i class="bi bi-heart"></i>
-              <span class="action-count bg-gradient-ocean" v-if="wishlistCount > 0">{{ wishlistCount }}</span>
-            </button> -->
-
             <!-- Theme Toggle -->
             <button
+              type="button"
               class="action-btn theme-toggle-btn hover-scale"
+              :title="isDarkMode ? 'Giao diện sáng' : 'Giao diện tối'"
               @click="toggleTheme"
-              :title="isDarkMode ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'"
             >
-              <i :class="isDarkMode ? 'bi bi-sun-fill text-ocean' : 'bi bi-moon-fill text-primary'"></i>
+              <i
+                :class="
+                  isDarkMode
+                    ? 'bi bi-sun-fill text-ocean'
+                    : 'bi bi-moon-fill text-primary'
+                "
+              ></i>
             </button>
-
-            <!-- CTA Button -->
-            <!-- <router-link class="cta-btn btn btn-ocean btn-lg hover-lift" to="/car-list">
-              <i class="bi bi-car-front-fill"></i>
-              <span>Đặt xe ngay</span>
-              <i class="bi bi-arrow-right"></i>
-            </router-link> -->
           </div>
         </div>
       </div>
     </nav>
 
-    <!-- Mobile Overlay -->
     <div
       class="mobile-overlay"
-      :class="{ 'active': mobileMenuOpen }"
+      :class="{ active: mobileMenuOpen }"
       @click="closeMobileMenu"
     ></div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue'
+import { animate } from 'animejs'
 
-// Reactive references
-const navbar = ref(null);
-const isDarkMode = ref(false);
-const mobileMenuOpen = ref(false);
-const isDropdownOpen = ref(false);
-const isScrolled = ref(false);
-const cartCount = ref(0);
-const wishlistCount = ref(0);
+const navbar = ref(null)
+const isDarkMode = ref(true)
+const mobileMenuOpen = ref(false)
+const isDropdownOpen = ref(false)
+const isScrolled = ref(false)
 
-// Initialize theme from localStorage
 onMounted(() => {
-  // Load saved theme
-  const savedTheme = localStorage.getItem('car-rental-theme') || 'light';
-  isDarkMode.value = savedTheme === 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  const savedTheme = localStorage.getItem('docforge-theme') || 'dark'
+  isDarkMode.value = savedTheme === 'dark'
+  document.documentElement.setAttribute('data-theme', savedTheme)
 
-  // Add scroll listener
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  document.addEventListener('keydown', handleEscape)
 
-  // Initialize cart/wishlist counts (placeholder)
-  cartCount.value = 2;
-  wishlistCount.value = 5;
-});
+  if (navbar.value) {
+    animate(navbar.value, {
+      translateY: [-12, 0],
+      opacity: [0, 1],
+      duration: 450,
+      ease: 'outQuad'
+    })
+  }
+})
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
+  window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('keydown', handleEscape)
+  document.body.style.overflow = ''
+})
 
-// Scroll handler for navbar effects
 function handleScroll() {
-  isScrolled.value = window.scrollY > 50;
+  isScrolled.value = window.scrollY > 24
 }
 
-// Theme toggle function
+function handleEscape(e) {
+  if (e.key === 'Escape') closeMobileMenu()
+}
+
 function toggleTheme() {
-  isDarkMode.value = !isDarkMode.value;
-  const newTheme = isDarkMode.value ? 'dark' : 'light';
-
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('car-rental-theme', newTheme);
-
-  // If themeManager exists, use it
-  if (window.themeManager) {
-    window.themeManager.setTheme(newTheme);
-  }
+  isDarkMode.value = !isDarkMode.value
+  const newTheme = isDarkMode.value ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', newTheme)
+  localStorage.setItem('docforge-theme', newTheme)
+  window.themeManager?.setTheme(newTheme)
 }
 
-// Mobile menu functions
+/** Chỉ toggle class — CSS lo trượt. Không dùng anime transform (gây kẹt khi đóng). */
 function toggleMobileMenu() {
-  mobileMenuOpen.value = !mobileMenuOpen.value;
-  document.body.style.overflow = mobileMenuOpen.value ? 'hidden' : '';
+  mobileMenuOpen.value = !mobileMenuOpen.value
+  document.body.style.overflow = mobileMenuOpen.value ? 'hidden' : ''
+  if (!mobileMenuOpen.value) isDropdownOpen.value = false
 }
 
 function closeMobileMenu() {
-  mobileMenuOpen.value = false;
-  document.body.style.overflow = '';
+  mobileMenuOpen.value = false
+  isDropdownOpen.value = false
+  document.body.style.overflow = ''
 }
 
-// Dropdown functions
+function toggleDropdownMobile() {
+  // Trên mobile không có mouseenter nên dùng click để bật/tắt
+  if (window.innerWidth <= 767.98) {
+    isDropdownOpen.value = !isDropdownOpen.value
+  }
+}
+
 function showDropdown() {
-  isDropdownOpen.value = true;
+  if (window.innerWidth > 767.98) isDropdownOpen.value = true
 }
 
 function hideDropdown() {
-  isDropdownOpen.value = false;
-}
-
-// Action functions
-function openCart() {
-  console.log('Opening cart...');
-}
-
-function openWishlist() {
-  console.log('Opening wishlist...');
+  if (window.innerWidth > 767.98) isDropdownOpen.value = false
 }
 </script>
 
 <style scoped>
-/* Modern Header Styles */
-.carrental-header {
+.docforge-header {
   position: relative;
   z-index: 1000;
 }
 
-/* Top Bar Styles */
-.main-menu__top {
-  background: var(--carrental-gradient-light);
-  padding: 8px 0;
-  border-bottom: 1px solid var(--carrental-bdr-color);
-  font-size: 14px;
-}
-
-.main-menu__top-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.main-menu__contact {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 13px;
-}
-
-.contact-link {
-  color: var(--carrental-black);
-  text-decoration: none;
-  font-weight: 500;
-  transition: var(--carrental-transition);
-}
-
-.contact-link:hover {
-  color: var(--carrental-base);
-}
-
-.contact-text {
-  color: var(--carrental-gray);
-  font-weight: 500;
-}
-
-.welcome-text {
-  flex: 1;
-  text-align: center;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.main-menu__top-right {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.operating-hours {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--carrental-gray);
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.social-links {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.social-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--carrental-white);
-  color: var(--carrental-gray);
-  text-decoration: none;
-  font-size: 14px;
-  transition: var(--carrental-transition);
-  border: 1px solid var(--carrental-bdr-color);
-}
-
-.social-link:hover {
-  background: var(--carrental-base);
-  color: var(--carrental-white);
-  transform: translateY(-2px);
-}
-
-/* Main Navigation */
 .main-menu {
-  background: var(--carrental-white);
-  box-shadow: var(--carrental-shadow);
-  position: sticky;
+  background: var(--docforge-white);
+  box-shadow: var(--docforge-shadow);
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 999;
-  transition: var(--carrental-transition);
+  transition: var(--docforge-transition);
+  min-height: var(--docforge-nav-height, 84px);
+  display: flex;
+  align-items: center;
 }
 
 .main-menu.scrolled {
-  box-shadow: var(--carrental-shadow-lg);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: var(--carrental-backdrop-blur-sm);
+  box-shadow: var(--docforge-shadow-lg);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: var(--docforge-backdrop-blur-sm);
+}
+
+[data-theme='dark'] .main-menu.scrolled {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.main-menu .container-fluid {
+  width: 100%;
 }
 
 .main-menu__wrapper {
@@ -370,479 +279,303 @@ function openWishlist() {
   gap: 2rem;
 }
 
-/* Modern Logo */
 .brand-link {
   text-decoration: none;
 }
-
 .brand-container {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-
 .brand-icon {
   width: 50px;
   height: 50px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  color: var(--carrental-white);
-  box-shadow: var(--carrental-shadow);
+  padding: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
-
+.brand-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 .brand-text {
   display: flex;
   flex-direction: column;
 }
-
 .brand-name {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
+  line-height: 1.1;
   letter-spacing: -0.5px;
-  line-height: 1;
-  font-family: var(--carrental-font-two);
 }
-
 .brand-tagline {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-top: 2px;
 }
 
-/* Mobile Toggle Button */
 .mobile-nav__toggler {
   display: none;
   flex-direction: column;
-  justify-content: space-between;
-  width: 30px;
-  height: 24px;
-  background: none;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
   border: none;
   cursor: pointer;
-  position: relative;
   z-index: 1001;
+  padding: 0;
 }
-
 .mobile-nav__toggler span {
   display: block;
-  height: 3px;
   width: 100%;
-  background: var(--carrental-black);
+  height: 2px;
+  background: var(--docforge-black);
   border-radius: 2px;
-  transition: var(--carrental-transition);
+  transition: transform 0.25s ease, opacity 0.2s ease;
 }
-
 .mobile-nav__toggler.active span:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
+  transform: translateY(7px) rotate(45deg);
 }
-
 .mobile-nav__toggler.active span:nth-child(2) {
   opacity: 0;
 }
-
 .mobile-nav__toggler.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -6px);
-}
-
-/* Navigation Menu */
-.main-menu__nav {
-  flex: 1;
-  display: flex;
-  justify-content: center;
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 .main-menu__list {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
   list-style: none;
   margin: 0;
   padding: 0;
-  gap: 2rem;
 }
-
 .nav-item {
   position: relative;
 }
-
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 12px 16px;
-  color: var(--carrental-black);
-  text-decoration: none;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: var(--docforge-black);
   font-weight: 600;
   font-size: 15px;
-  border-radius: var(--carrental-bdr-radius);
-  transition: var(--carrental-transition);
-  position: relative;
+  text-decoration: none;
+  transition: var(--docforge-transition);
 }
-
-.nav-link:hover {
-  color: var(--carrental-base);
-  background: rgba(253, 85, 35, 0.1);
+.nav-link:hover,
+.router-link-active.nav-link {
+  background: var(--docforge-gradient-light);
+  color: var(--docforge-base);
 }
-
-.nav-link.router-link-active {
-  color: var(--carrental-base);
-  background: var(--carrental-gradient-light);
-}
-
 .nav-icon {
-  font-size: 16px;
+  font-size: 15px;
 }
-
 .dropdown-icon {
-  font-size: 12px;
-  transition: var(--carrental-transition);
+  font-size: 10px;
+  margin-left: 2px;
+  transition: transform 0.25s ease;
 }
-
-.dropdown:hover .dropdown-icon {
+.dropdown-icon.rotated {
   transform: rotate(180deg);
 }
 
-/* Dropdown Menu */
 .dropdown-menu {
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 250px;
-  background: var(--carrental-white);
-  border-radius: var(--carrental-bdr-radius);
-  box-shadow: var(--carrental-shadow-lg);
-  border: 1px solid var(--carrental-bdr-color);
+  min-width: 280px;
+  background: var(--docforge-white);
+  border-radius: var(--docforge-bdr-radius);
+  box-shadow: var(--docforge-shadow-lg);
+  border: 1px solid var(--docforge-bdr-color);
   list-style: none;
   margin: 0;
   padding: 8px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px);
-  transition: var(--carrental-transition);
+  transform: translateY(-8px);
+  transition: var(--docforge-transition);
   z-index: 1000;
 }
-
 .dropdown-menu.show {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
-
 .dropdown-link {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 12px 16px;
-  color: var(--carrental-black);
+  color: var(--docforge-black);
   text-decoration: none;
   font-weight: 500;
   border-radius: 8px;
-  transition: var(--carrental-transition);
+  transition: var(--docforge-transition);
 }
-
+.dropdown-link span:not(.ready-badge):not(.soon-badge) {
+  flex: 1;
+}
 .dropdown-link:hover {
-  background: var(--carrental-gradient-light);
-  color: var(--carrental-base);
+  background: var(--docforge-gradient-light);
+  color: var(--docforge-base);
 }
-
 .dropdown-link i {
   font-size: 16px;
   width: 20px;
 }
-
 .dropdown-link-soon {
   cursor: default;
-  color: var(--carrental-gray) !important;
-  justify-content: space-between;
+  color: var(--docforge-gray) !important;
 }
-
 .dropdown-link-soon:hover {
   background: transparent;
-  color: var(--carrental-gray) !important;
+  color: var(--docforge-gray) !important;
 }
-
+.ready-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
 .soon-badge {
   font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--carrental-bdr-color);
-  color: var(--carrental-gray);
+  background: var(--docforge-bdr-color);
+  color: var(--docforge-gray);
 }
 
-/* Action Buttons */
 .main-menu__actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-
 .action-btn {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--carrental-white);
-  border: 2px solid var(--carrental-bdr-color);
-  color: var(--carrental-gray);
+  background: var(--docforge-white);
+  border: 2px solid var(--docforge-bdr-color);
+  color: var(--docforge-gray);
   font-size: 18px;
   cursor: pointer;
-  transition: var(--carrental-transition);
+  transition: var(--docforge-transition);
 }
-
 .action-btn:hover {
-  border-color: var(--carrental-base);
-  color: var(--carrental-base);
-  box-shadow: var(--carrental-shadow);
+  border-color: var(--docforge-base);
+  color: var(--docforge-base);
+  box-shadow: var(--docforge-shadow);
+  transform: translateY(-2px);
 }
 
-.action-count {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--carrental-white);
-  line-height: 1;
-}
-
-/* CTA Button */
-.cta-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 12px 24px !important;
-  font-weight: 700;
-  text-decoration: none;
-  border-radius: 12px;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-/* Mobile Overlay */
 .mobile-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 998;
   opacity: 0;
   visibility: hidden;
-  transition: var(--carrental-transition);
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
-
 .mobile-overlay.active {
   opacity: 1;
   visibility: visible;
 }
 
-/* Responsive Design */
-@media (max-width: 991.98px) {
-  .main-menu__contact {
-    gap: 1rem;
-  }
-
-  .main-menu__top-right {
-    gap: 1rem;
-  }
-
-  .social-links {
-    gap: 0.25rem;
-  }
-
-  .main-menu__wrapper {
-    gap: 1rem;
-  }
-
-  .brand-name {
-    font-size: 24px;
-  }
-
-  .cta-btn span {
-    display: none;
-  }
-}
-
 @media (max-width: 767.98px) {
-  .main-menu__top {
-    padding: 6px 0;
+  .main-menu__wrapper {
+    padding: 0.75rem 0;
   }
-
-  .main-menu__contact {
-    gap: 0.75rem;
-  }
-
-  .contact-item {
-    font-size: 12px;
-  }
-
-  .welcome-text {
-    display: none !important;
-  }
-
   .mobile-nav__toggler {
     display: flex;
   }
 
+  /* Panel trượt bằng CSS transition — không inline transform từ JS */
   .main-menu__nav {
     position: fixed;
     top: 0;
-    right: -100%;
-    width: 280px;
-    height: 100vh;
-    background: var(--carrental-white);
-    box-shadow: var(--carrental-shadow-xl);
-    padding: 100px 2rem 2rem;
-    transition: var(--carrental-transition);
-    z-index: 999;
-  }
-
-  .main-menu__nav.mobile-active {
     right: 0;
+    width: min(300px, 82vw);
+    height: 100vh;
+    background: var(--docforge-white);
+    box-shadow: var(--docforge-shadow-xl);
+    padding: calc(var(--docforge-nav-height, 84px) + 1rem) 1.5rem 2rem;
+    z-index: 999;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .main-menu__nav.mobile-active {
+    transform: translateX(0);
   }
 
   .main-menu__list {
     flex-direction: column;
-    gap: 0;
+    align-items: stretch;
+    gap: 4px;
   }
-
   .nav-link {
-    padding: 16px 0;
-    border-radius: 0;
-    border-bottom: 1px solid var(--carrental-bdr-color);
+    padding: 14px 12px;
   }
-
   .dropdown-menu {
     position: static;
     box-shadow: none;
     border: none;
-    background: var(--carrental-light);
-    margin-top: 8px;
+    background: var(--docforge-light);
+    margin-top: 4px;
     transform: none;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    padding: 0 8px;
   }
-
-  .main-menu__actions {
-    gap: 0.5rem;
+  .dropdown-menu.show {
+    max-height: 400px;
+    opacity: 1;
+    visibility: visible;
+    padding: 8px;
   }
-
-  .action-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-
-  .cta-btn {
-    padding: 10px 16px !important;
-    font-size: 12px;
-    gap: 0.25rem;
-  }
-
-  .brand-container {
-    gap: 0.75rem;
-  }
-
   .brand-icon {
     width: 40px;
     height: 40px;
-    font-size: 20px;
   }
-
   .brand-name {
-    font-size: 20px;
+    font-size: 19px;
   }
-
   .brand-tagline {
-    font-size: 10px;
+    font-size: 9px;
   }
 }
 
-@media (max-width: 575.98px) {
-  .main-menu__top-inner {
-    gap: 0.5rem;
-  }
-
-  .main-menu__contact {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .operating-hours {
-    display: none !important;
-  }
-
-  .main-menu__wrapper {
-    padding: 0.75rem 0;
-  }
+[data-theme='dark'] .main-menu {
+  background: var(--docforge-white);
 }
-
-/* Dark Theme Styles */
-[data-theme="dark"] .main-menu__top {
-  background: var(--carrental-gradient-dark);
-  border-bottom-color: var(--carrental-bdr-color);
+[data-theme='dark'] .mobile-nav__toggler span {
+  background: var(--docforge-black);
 }
-
-[data-theme="dark"] .contact-link {
-  color: var(--carrental-black);
-}
-
-[data-theme="dark"] .contact-text {
-  color: var(--carrental-gray);
-}
-
-[data-theme="dark"] .social-link {
-  background: var(--carrental-white);
-  border-color: var(--carrental-bdr-color);
-}
-
-[data-theme="dark"] .main-menu {
-  background: var(--carrental-white);
-  box-shadow: var(--carrental-shadow);
-}
-
-[data-theme="dark"] .main-menu.scrolled {
-  background: rgba(15, 23, 42, 0.95);
-}
-
-[data-theme="dark"] .nav-link {
-  color: var(--carrental-black);
-}
-
-[data-theme="dark"] .dropdown-menu {
-  background: var(--carrental-white);
-  border-color: var(--carrental-bdr-color);
-}
-
-[data-theme="dark"] .dropdown-link {
-  color: var(--carrental-black);
-}
-
-[data-theme="dark"] .action-btn {
-  background: var(--carrental-white);
-  border-color: var(--carrental-bdr-color);
-  color: var(--carrental-gray);
-}
-
-[data-theme="dark"] .mobile-nav__toggler span {
-  background: var(--carrental-black);
-}
-
 @media (max-width: 767.98px) {
-  [data-theme="dark"] .main-menu__nav {
-    background: var(--carrental-white);
+  [data-theme='dark'] .main-menu__nav {
+    background: var(--docforge-white);
   }
 }
 </style>

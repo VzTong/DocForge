@@ -6,11 +6,9 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.converters.markdown.md2pdf import (
-    MarkdownToPdfConverter,
-    _is_simple_cv_header,
-)
 from app.converters.markdown.meta import split_document_header
+from app.converters.markdown.md2pdf import MarkdownToPdfConverter
+from app.converters.pdf.converter import PdfToDocxConverter
 from app.main import app
 
 from pathlib import Path
@@ -26,7 +24,8 @@ SAMPLE_CV_MD_PATH = Path(__file__).parent / "fixtures" / "samplecv.md"
 SAMPLE_CV_MD = SAMPLE_CV_MD_PATH.read_text(encoding="utf-8")
 
 # Báo cáo có metadata lines trước --- (dùng để test document/github giữ nguyên header)
-SAMPLE_DOC_MD = Path(__file__).parent / "fixtures" / "sampledoc.md"
+SAMPLE_DOC_MD_PATH = Path(__file__).parent / "fixtures" / "sampledoc.md"
+SAMPLE_DOC_MD = SAMPLE_DOC_MD_PATH.read_text(encoding="utf-8")
 
 # Header CV phức tạp (HTML layout / icon) → không được tách
 SAMPLE_COMPLEX_CV_MD = """# Fullname
@@ -67,7 +66,7 @@ def test_list_converters():
 
 def test_render_html_keeps_table_and_code_block():
     """Test render HTML giữ nguyên table và code block."""
-    converter = MarkdownToPdfConverter()
+    converter = MarkdownToPdfConverter(theme="document")
     html_content = converter._render_html(SAMPLE_MD)
     # Kiểm tra table
     assert "<table>" in html_content
@@ -227,27 +226,6 @@ def test_split_document_header_extracts_address_and_links():
     assert "Tóm tắt nghề nghiệp" in body
 
 
-# ---------------------------------------------------------------------------
-# Header handling: document / github giữ nguyên; CV simple tách; CV complex không tách
-# ---------------------------------------------------------------------------
-
-def test_is_simple_cv_header_recognizes_samplecv():
-    """samplecv.md là header đơn giản → được nhận diện để tách."""
-    assert _is_simple_cv_header(SAMPLE_CV_MD) is True
-
-
-def test_is_simple_cv_header_rejects_complex_html():
-    """Header có div/span class (layout/icon) → coi là phức tạp, không tách."""
-    assert _is_simple_cv_header(SAMPLE_COMPLEX_CV_MD) is False
-
-
-def test_is_simple_cv_header_document_style_is_simple():
-    """Báo cáo metadata lines (không HTML layout) vẫn được heuristic coi là simple.
-    Việc không tách khi dùng theme document là do theme != cv, không phải heuristic.
-    """
-    assert _is_simple_cv_header(SAMPLE_DOC_MD) is True
-
-
 def test_document_theme_keeps_metadata_lines():
     """Theme document phải giữ nguyên H1 + dòng metadata trước ---."""
     converter = MarkdownToPdfConverter(theme="document")
@@ -307,3 +285,126 @@ def test_cv_theme_complex_header_is_kept_in_body():
 
     # Title vẫn được trích cho <title> / h1 template
     assert "<h1>Fullname</h1>" in html
+
+def _create_sample_pdf() -> bytes:
+    """Tạo sample PDF từ Markdown để test PDF -> DOCX converter."""
+    fixtures_dir = Path(__file__).parent / "fixtures"
+    fixtures_dir.mkdir(exist_ok=True)
+    out_dir = fixtures_dir / "tmp_pdf"
+
+    converter = MarkdownToPdfConverter()
+    pdf_path = converter.convert_from_text(
+        SAMPLE_DOC_MD,
+        out_dir,
+        theme="document",
+        title="Sample PDF",
+    )
+    data = pdf_path.read_bytes()
+
+    # Dọn dẹp (tuỳ chọn)
+    import shutil
+    shutil.rmtree(out_dir, ignore_errors=True)
+
+    return data
+
+
+def test_pdf_to_docx_success():
+    """Test PDF -> DOCX conversion thành công (để trống start/end page)."""
+    pdf_bytes = _create_sample_pdf()
+
+    response = client.post(
+        "/convert/pdf-to-docx",
+        files={"file": ("sample.pdf", pdf_bytes, "application/pdf")},
+        # Không gửi start_page / end_page → convert toàn bộ
+    )
+
+    assert response.status_code == 200
+    assert "wordprocessingml" in response.headers["content-type"]
+    assert len(response.content) > 0
+    # Có thể kiểm tra thêm tên file
+    assert "sample.docx" in response.headers.get("content-disposition", "")
+
+
+def test_pdf_to_docx_with_page_range():
+    """Test PDF -> DOCX với start_page và end_page."""
+    pdf_bytes = _create_sample_pdf()
+
+    response = client.post(
+        "/convert/pdf-to-docx",
+        files={"file": ("sample.pdf", pdf_bytes, "application/pdf")},
+        data={
+            "start_page": "0",
+            "end_page": "1",   # chỉ lấy trang đầu
+        },
+    )
+
+    assert response.status_code == 200
+    assert "wordprocessingml" in response.headers["content-type"]
+    assert len(response.content) > 0
+
+
+def test_pdf_to_docx_empty_page_params():
+    """Test khi form gửi start_page/end_page = chuỗi rỗng (trường hợp hay gặp trên Swagger)."""
+    pdf_bytes = _create_sample_pdf()
+
+    response = client.post(
+        "/convert/pdf-to-docx",
+        files={"file": ("sample.pdf", pdf_bytes, "application/pdf")},
+        data={
+            "start_page": "",
+            "end_page": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "wordprocessingml" in response.headers["content-type"]
+
+
+def test_pdf_to_docx_reject_wrong_filetype():
+    """Test từ chối file không phải PDF."""
+    response = client.post(
+        "/convert/pdf-to-docx",
+        files={"file": ("test.exe", b"bad content", "application/octet-stream")},
+    )
+    assert response.status_code == 400
+    # An toàn hơn: kiểm tra status + nội dung có chứa thông báo
+    detail = response.json().get("detail") or response.json().get("message") or str(response.json())
+    assert "Only accepts .pdf" in str(detail)
+
+
+def test_pdf_to_docx_invalid_pdf():
+    """Test PDF giả / bị hỏng → 422."""
+    fake_pdf = b"%PDF-1.4\n%This is not a real PDF"
+    response = client.post(
+        "/convert/pdf-to-docx",
+        files={"file": ("fake.pdf", fake_pdf, "application/pdf")},
+    )
+    assert response.status_code == 422
+    # detail có thể chứa "not a valid PDF" hoặc "Failed to read" tùy phiên bản pdf2docx
+
+
+def test_pdf_to_docx_converter_direct():
+    """Test gọi trực tiếp PdfToDocxConverter (không qua API)."""
+    pdf_bytes = _create_sample_pdf()
+    fixtures_dir = Path(__file__).parent / "fixtures"
+    fixtures_dir.mkdir(exist_ok=True)
+
+    pdf_path = fixtures_dir / "sample_direct.pdf"
+    pdf_path.write_bytes(pdf_bytes)
+
+    output_dir = fixtures_dir / "output"
+    # output_dir sẽ được converter tạo tự động
+
+    converter = PdfToDocxConverter()
+    # Quan trọng: truyền thư mục, không truyền đường dẫn file .docx
+    converted = converter.convert(
+        input_file=pdf_path,
+        output_file=output_dir,          # ← thư mục
+        start_page=0,
+        end_page=None,
+    )
+
+    assert converted.exists()
+    assert converted.suffix == ".docx"
+    assert converted.name == "sample_direct.docx"
+    assert converted.parent == output_dir

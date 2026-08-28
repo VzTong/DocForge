@@ -6,6 +6,12 @@ import config from '@/configs/config'
 // để tránh lệch nhau giữa các file.
 const PY_SERVICE_URL = config.API_URL_PY_SERVICE
 
+if (!PY_SERVICE_URL) {
+  // Log ngay lúc load module để dễ phát hiện thiếu .env khi deploy, thay vì
+  // phải chờ tới lúc bấm nút mới thấy fetch("undefined/...") fail.
+  console.warn('[useApi] PY_SERVICE_URL đang rỗng — kiểm tra biến VITE_PY_SERVICE_URL trong .env')
+}
+
 export function useApi() {
   const loading = ref(false)
   const error = ref(null)
@@ -63,6 +69,10 @@ export function useApi() {
       error.value = errorMessage
       state.error = errorMessage
 
+      // Log lỗi ra console để quan sát lúc deploy — toast chỉ hiện message
+      // ngắn gọn cho người dùng, còn đây là log đầy đủ có stack trace.
+      console.error('[useApi] execute() lỗi:', err)
+
       // Call error callback
       if (onError && typeof onError === 'function') {
         onError(err)
@@ -100,6 +110,32 @@ export function useApi() {
     execute,
     reset
   }
+}
+
+/**
+ * Đọc message lỗi từ body BE.
+ * - Handler mới / FastAPI: { detail: string | array }
+ * - Handler cũ DocForge:   { error: string, status_code }
+ */
+function parseApiError(errData, fallback) {
+  if (!errData || typeof errData !== 'object') return fallback
+
+  // Ưu tiên detail (chuẩn), fallback sang error (handler cũ)
+  const d = errData.detail !== undefined ? errData.detail : errData.error
+
+  if (typeof d === 'string' && d.trim()) return d
+
+  if (Array.isArray(d)) {
+    return d
+      .map((x) => (typeof x === 'string' ? x : x.msg || JSON.stringify(x)))
+      .join('; ')
+  }
+
+  if (d && typeof d === 'object') {
+    return d.msg || d.message || JSON.stringify(d)
+  }
+
+  return fallback
 }
 
 /**
@@ -162,30 +198,43 @@ export function useMdToPdfConverter() {
     })
   }
 
-  /** Render preview PDF (inline) từ nội dung Markdown, trả về Object URL để nhúng iframe */
+    /**
+   * Preview PDF từ Markdown.
+   * BE: POST /preview/md-to-pdf  body JSON { contents, theme, page_size }
+   * 422 = ConversionError từ WeasyPrint (thiếu lib hệ thống / CSS / nội dung lỗi),
+   *      KHÔNG phải validation form.
+   */
+    /**
+   * Preview PDF từ Markdown.
+   * POST /preview/md-to-pdf  JSON { contents, theme, page_size }
+   * 422 = ConversionError (thường WeasyPrint local thiếu lib).
+   */
   const Preview = (mdContent, theme, pageSize) => {
     return execute(async () => {
-      console.log(`Sending request to ${PY_SERVICE_URL}/preview/md-to-pdf with data:`, {
-        contents: mdContent.substring(0, 30) + '...',
-        theme,
-        page_size: pageSize
-      })
       const res = await fetch(`${PY_SERVICE_URL}/preview/md-to-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: mdContent,
-          theme,
-          page_size: pageSize
+          theme: theme || 'document',
+          page_size: pageSize || 'A4'
         })
       })
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.detail || `Preview thất bại: ${res.statusText}`)
+        // Log full body để debug (Network tab có thể không hiện nếu đã consume)
+        console.error('[Preview] status=', res.status, 'body=', errData)
+        const msg = parseApiError(errData, `Preview thất bại (${res.status})`)
+        throw new Error(msg)
       }
 
       const blob = await res.blob()
+      // BE đôi khi trả JSON lỗi nhưng status 200 — phòng hờ
+      if (blob.type && blob.type.includes('json')) {
+        const text = await blob.text()
+        throw new Error(text.slice(0, 300) || 'Preview trả JSON thay vì PDF')
+      }
       return URL.createObjectURL(blob)
     }, { showLoading: false })
   }
@@ -193,8 +242,6 @@ export function useMdToPdfConverter() {
   /** Convert sang PDF rồi tự động tải về. Truyền `file` HOẶC `content`, không truyền cả hai. */
   const ConvertToPDF = (file, content, filename, theme, pageSize) => {
     return execute(async () => {
-      console.log("env =", import.meta.env);
-      console.log("url =", import.meta.env.VITE_PY_SERVICE_URL);
       const form = new FormData()
       if (file) form.append('file', file)
       else form.append('content', content) // cần BE hỗ trợ field này (xem ghi chú ở trên)
@@ -203,25 +250,45 @@ export function useMdToPdfConverter() {
       form.append('theme', theme)
       form.append('page_size', pageSize)
 
+      console.log('[useMdToPdfConverter] convert:', { hasFile: !!file, filename, theme, pageSize })
+
       const res = await fetch(`${PY_SERVICE_URL}/convert/md-to-pdf`, {
         method: 'POST',
         body: form
       })
 
+      // if (!res.ok) {
+      //   const errData = await res.json().catch(() => ({}))
+      //   throw new Error(errData.detail || `Convert thất bại: ${res.statusText}`)
+      // }
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.detail || `Convert thất bại: ${res.statusText}`)
+        console.error('[ConvertToPDF] status=', res.status, 'body=', errData)
+        const msg = parseApiError(errData, `Convert thất bại (${res.status})`)
+        throw new Error(msg)
+      }
+
+      // Nếu BE đã set Content-Disposition với tên gợi ý (từ meta.py ->
+      // suggest_output_filename), ưu tiên dùng tên đó thay vì tên FE tự đoán.
+      // Hiện route.py CHƯA set header này — đây là chỗ đọc sẵn cho khi BE bổ sung.
+      let downloadName = `${filename || 'document'}.pdf`
+      const disposition = res.headers.get('Content-Disposition')
+      if (disposition) {
+        const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+        if (match?.[1]) downloadName = decodeURIComponent(match[1])
       }
 
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${filename || 'document'}.pdf`
+      a.download = downloadName
       document.body.appendChild(a)
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
+
+      console.log('[useMdToPdfConverter] convert xong, đã tải:', downloadName)
 
       return true
     }, { successMessage: 'Đã tạo và tải PDF thành công' })
@@ -240,28 +307,84 @@ export function useMdToPdfConverter() {
 // ở nơi gọi rồi bỏ alias này.
 export const useConverter = useMdToPdfConverter
 
+/**
+ * Composable gọi DocForge_PyService cho tính năng PDF -> DOCX (routes.py:
+ * POST /convert/pdf-to-docx, dùng PdfToDocxConverter + pdf2docx).
+ *
+ * Khác với md-to-pdf:
+ * - Chỉ nhận file (`file: UploadFile = File(...)` — BẮT BUỘC, không có
+ *   nhánh nhập text vì PDF không phải định dạng gõ tay được).
+ * - Có thêm 2 field tuỳ chọn `start_page` / `end_page` (Form, kiểu string,
+ *   BE tự parse int) để convert một khoảng trang thay vì cả file.
+ * - KHÔNG có endpoint preview — route.py chỉ có convert, nên trang này sẽ
+ *   không có khung xem trước realtime như md-to-pdf.
+ */
+export function usePdfToDocxConverter() {
+  const { execute, ...rest } = useApi()
+
+  /** Convert PDF sang DOCX rồi tự động tải về. */
+  const ConvertToDocx = (file, startPage, endPage) => {
+    return execute(async () => {
+      const form = new FormData()
+      form.append('file', file)
+      // BE parse '' thành None nếu không điền, nhưng tránh gửi field rỗng
+      // không cần thiết
+      if (startPage !== '' && startPage != null) form.append('start_page', String(startPage))
+      if (endPage !== '' && endPage != null) form.append('end_page', String(endPage))
+
+      console.log('[usePdfToDocxConverter] convert:', { filename: file?.name, startPage, endPage })
+
+      const res = await fetch(`${PY_SERVICE_URL}/convert/pdf-to-docx`, {
+        method: 'POST',
+        body: form
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || `Convert thất bại: ${res.statusText}`)
+      }
+
+      // BE đặt tên file theo input_file.stem + ".docx" và trả qua FileResponse
+      // (có Content-Disposition tự động) — đọc lại tên đó nếu có, fallback
+      // sang đổi đuôi .pdf -> .docx từ tên file gốc.
+      let downloadName = (file?.name || 'document.pdf').replace(/\.pdf$/i, '.docx')
+      const disposition = res.headers.get('Content-Disposition')
+      if (disposition) {
+        const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+        if (match?.[1]) downloadName = decodeURIComponent(match[1])
+      }
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = downloadName
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+
+      console.log('[usePdfToDocxConverter] convert xong, đã tải:', downloadName)
+
+      return true
+    }, { successMessage: 'Đã tạo và tải file Word thành công' })
+  }
+
+  return {
+    ...rest,
+    ConvertToDocx
+  }
+}
+
 // --------------------------------------------------------------------------
-// Chỗ để thêm converter mới sau này — copy khuôn của useMdToPdfConverter().
+// Chỗ để thêm converter mới sau này — copy khuôn của useMdToPdfConverter()
+// hoặc usePdfToDocxConverter() ở trên tuỳ converter có preview hay không.
 // Bỏ comment và chỉnh path/field theo endpoint BE thật khi triển khai.
 // --------------------------------------------------------------------------
-// export function usePdfToWordConverter() {
-//   const { execute, ...rest } = useApi()
-//   const Convert = (file, filename) => {
-//     return execute(async () => {
-//       const form = new FormData()
-//       form.append('file', file)
-//       form.append('filename', filename || 'document')
-//       const res = await fetch(`${PY_SERVICE_URL}/convert/pdf-to-word`, { method: 'POST', body: form })
-//       if (!res.ok) throw new Error(`Convert thất bại: ${res.statusText}`)
-//       // ... đọc blob, tải về, giống ConvertToPDF ở trên
-//     }, { successMessage: 'Đã tạo file Word thành công' })
-//   }
-//   return { ...rest, Convert }
-// }
-// export function usePdfToMdConverter() { /* tương tự */ }
-// export function useWordToPdfConverter() { /* tương tự */ }
-// export function useWordToMdConverter() { /* tương tự */ }
-// export function useTxtToMdConverter() { /* tương tự */ }
+// export function useWordToPdfConverter() { /* tương tự usePdfToDocxConverter, đổi endpoint */ }
+// export function useAudioToTextConverter() { /* transcript từ audio */ }
+// export function useVideoToTextConverter() { /* tách audio từ video rồi transcript */ }
+// export function useTranslateTranscriptConverter() { /* dịch transcript bằng AI */ }
 
 export function useAuthApi() {
   const { execute, ...rest } = useApi()
