@@ -113,6 +113,32 @@ export function useApi() {
 }
 
 /**
+ * Đọc message lỗi từ body BE.
+ * - Handler mới / FastAPI: { detail: string | array }
+ * - Handler cũ DocForge:   { error: string, status_code }
+ */
+function parseApiError(errData, fallback) {
+  if (!errData || typeof errData !== 'object') return fallback
+
+  // Ưu tiên detail (chuẩn), fallback sang error (handler cũ)
+  const d = errData.detail !== undefined ? errData.detail : errData.error
+
+  if (typeof d === 'string' && d.trim()) return d
+
+  if (Array.isArray(d)) {
+    return d
+      .map((x) => (typeof x === 'string' ? x : x.msg || JSON.stringify(x)))
+      .join('; ')
+  }
+
+  if (d && typeof d === 'object') {
+    return d.msg || d.message || JSON.stringify(d)
+  }
+
+  return fallback
+}
+
+/**
  * ==========================================================================
  * DocForge sẽ có nhiều bộ chuyển đổi (md-to-pdf, pdf-to-word, pdf-to-md,
  * word-to-pdf, word-to-md, txt-to-md, ...). Để "sẵn" cho việc thêm converter
@@ -178,6 +204,11 @@ export function useMdToPdfConverter() {
    * 422 = ConversionError từ WeasyPrint (thiếu lib hệ thống / CSS / nội dung lỗi),
    *      KHÔNG phải validation form.
    */
+    /**
+   * Preview PDF từ Markdown.
+   * POST /preview/md-to-pdf  JSON { contents, theme, page_size }
+   * 422 = ConversionError (thường WeasyPrint local thiếu lib).
+   */
   const Preview = (mdContent, theme, pageSize) => {
     return execute(async () => {
       const res = await fetch(`${PY_SERVICE_URL}/preview/md-to-pdf`, {
@@ -192,23 +223,17 @@ export function useMdToPdfConverter() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        let msg = `Preview thất bại (${res.status})`
-        if (typeof errData.detail === 'string') {
-          msg = errData.detail
-        } else if (Array.isArray(errData.detail)) {
-          // FastAPI validation style
-          msg = errData.detail
-            .map((d) => d.msg || JSON.stringify(d))
-            .join('; ')
-        }
+        // Log full body để debug (Network tab có thể không hiện nếu đã consume)
+        console.error('[Preview] status=', res.status, 'body=', errData)
+        const msg = parseApiError(errData, `Preview thất bại (${res.status})`)
         throw new Error(msg)
       }
 
       const blob = await res.blob()
-      // Một số lỗi BE trả JSON nhưng status lạ — phòng hờ
+      // BE đôi khi trả JSON lỗi nhưng status 200 — phòng hờ
       if (blob.type && blob.type.includes('json')) {
         const text = await blob.text()
-        throw new Error(text.slice(0, 200) || 'Preview trả JSON thay vì PDF')
+        throw new Error(text.slice(0, 300) || 'Preview trả JSON thay vì PDF')
       }
       return URL.createObjectURL(blob)
     }, { showLoading: false })
@@ -232,9 +257,15 @@ export function useMdToPdfConverter() {
         body: form
       })
 
+      // if (!res.ok) {
+      //   const errData = await res.json().catch(() => ({}))
+      //   throw new Error(errData.detail || `Convert thất bại: ${res.statusText}`)
+      // }
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.detail || `Convert thất bại: ${res.statusText}`)
+        console.error('[ConvertToPDF] status=', res.status, 'body=', errData)
+        const msg = parseApiError(errData, `Convert thất bại (${res.status})`)
+        throw new Error(msg)
       }
 
       // Nếu BE đã set Content-Disposition với tên gợi ý (từ meta.py ->
