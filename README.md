@@ -47,6 +47,30 @@
 
 ---
 
+## Vision / Tầm nhìn
+
+**DocForge** aims to be a practical, browser-based toolkit that helps people turn everyday content into usable documents and transcripts — without heavy desktop software or complicated setup.
+
+*DocForge hướng tới trở thành bộ công cụ web thực dụng, giúp người dùng chuyển nội dung thường ngày thành tài liệu và transcript dùng được ngay — không cần phần mềm desktop nặng hay cấu hình phức tạp.*
+
+We focus on:
+
+- **Clear conversion flows** — Markdown to polished PDF, PDF to editable Word, audio to editable subtitles.
+- **Human-in-the-loop** — especially for transcription: preview, edit, find & replace, then export (SRT / VTT / TXT).
+- **Practical growth** — the next steps we want to build are Video → Text and natural AI transcript translation (see roadmap), reusing the same preview/export pipeline.
+
+*Chúng tôi tập trung vào:*
+
+- *Luồng chuyển đổi rõ ràng* — Markdown thành PDF đẹp, PDF thành Word chỉnh sửa được, audio thành phụ đề chỉnh sửa được.
+- *Con người vẫn nắm quyền* — đặc biệt với transcript: xem trước, sửa, tìm & thay, rồi mới xuất file.
+- *Phát triển thực tế* — hướng tới Video → Text và dịch transcript bằng AI (thoát nghĩa, tự nhiên), tái sử dụng pipeline preview/export hiện có.
+
+This is an active project. Features listed as “coming soon” are intentional next steps documented in the repo plans — not marketing promises.
+
+*Đây là dự án đang phát triển. Các mục “sắp tới” là bước tiếp theo đã ghi trong kế hoạch repo — không phải lời hứa marketing.*
+
+---
+
 ## Features / Tính năng hiện có
 
 | Feature / Tính năng | Frontend route | Backend endpoints | Description / Mô tả |
@@ -318,13 +342,17 @@ python -m pytest tests/test_api.py::test_pdf_to_docx_success -v
 
 ## Roadmap / Lộ trình ngắn hạn
 
-See details in / Xem chi tiết trong:
+What we want to build next — in a way that stays legal, reusable, and consistent with the current architecture:
+
+*Những gì chúng tôi muốn xây tiếp — theo hướng hợp pháp, tái sử dụng được, và thống nhất với kiến trúc hiện tại:*
+
+1. **Video → Text** — upload video or public YouTube link → extract audio → same transcript preview / edit / export flow as audio.
+2. **AI transcript translation** — sense-for-sense translation of segments (any language → any language), keep timestamps, let users review before export.
+
+See detailed plans / Xem kế hoạch chi tiết:
 
 - `DocForge_PyService/PLAN_video_and_translate.md`
 - `DocForge_PyService/Transcript-editor-plan.md`
-
-1. **Video → Text** (extract audio with ffmpeg + legitimate YouTube links)
-2. **AI transcript translation** / Dịch transcript bằng AI (natural, context-aware)
 
 ---
 
