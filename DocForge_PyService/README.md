@@ -256,7 +256,7 @@ DocForge_PyService/
 
 > **Ghi chú về License:**
 > - File `LICENSE` hiện có nằm ở `app/converters/templates/markdown/github/LICENSE` — đây là **license MIT của thư viện bên thứ ba** (`github-markdown-css` của Sindre Sorhus), không phải license của toàn bộ dự án DocForge_PyService.
-> - Bản thân service hiện chưa có file `LICENSE` riêng ở root. README cũ chỉ ghi “MIT”. Nếu muốn công khai rõ ràng, nên thêm file `LICENSE` (MIT chuẩn) vào thư mục gốc monorepo hoặc vào `DocForge_PyService/`.
+> - Bản thân service hiện chưa có file `LICENSE` riêng ở root. Nên thêm file `LICENSE` (MIT chuẩn) đang đặt tại `DocForge_PyService/`.
 
 ---
 
