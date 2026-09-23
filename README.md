@@ -323,5 +323,5 @@ Xem chi tiết trong:
 
 MIT
 
-> Ghi chú: File `LICENSE` hiện có trong `app/converters/templates/markdown/github/` là license của thư viện bên thứ ba (`github-markdown-css`), không phải license của toàn bộ dự án. Nên thêm file `LICENSE` (MIT) ở root monorepo nếu muốn công khai rõ ràng.
+> Ghi chú: File `LICENSE` hiện có trong `app/converters/templates/markdown/github/` là license của thư viện bên thứ ba (`github-markdown-css`), không phải license của toàn bộ dự án. Nên Hiện tại file `LICENSE` (MIT chuẩn) đang đặt tại `DocForge_PyService/`.
 ```
