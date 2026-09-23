@@ -1,7 +1,8 @@
 # DocForge
 
 <p align="center">
-  <strong>Bộ công cụ web chuyển đổi tài liệu & xử lý media</strong>
+  <strong>Document conversion & media processing toolkit</strong><br/>
+  <em>Bộ công cụ chuyển đổi tài liệu & xử lý media</em>
 </p>
 
 <p align="center">
@@ -13,14 +14,12 @@
 </p>
 
 <p align="center">
-  <!-- Frontend -->
   <img src="https://img.shields.io/badge/Vue.js-3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3"/>
   <img src="https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite"/>
   <img src="https://img.shields.io/badge/Pinia-State-FFD859?style=flat-square&logo=pinia&logoColor=black" alt="Pinia"/>
   <img src="https://img.shields.io/badge/Bootstrap-5-7952B3?style=flat-square&logo=bootstrap&logoColor=white" alt="Bootstrap"/>
   <img src="https://img.shields.io/badge/Vue_Router-4-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue Router"/>
   &nbsp;
-  <!-- Backend -->
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/>
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
   <img src="https://img.shields.io/badge/WeasyPrint-PDF-E34F26?style=flat-square&logo=css3&logoColor=white" alt="WeasyPrint"/>
@@ -30,7 +29,14 @@
 
 ---
 
-**DocForge** gồm hai phần chính:
+**DocForge** is a web toolkit for document conversion and media processing, consisting of:
+
+| Part | Directory | Description |
+|------|-----------|-------------|
+| **Frontend** | `DocForge_FE` | Web UI (Vue 3 + Vite) |
+| **Backend** | `DocForge_PyService` | RESTful API (Python FastAPI) |
+
+**DocForge** là bộ công cụ web chuyển đổi tài liệu và xử lý media, gồm:
 
 | Phần | Thư mục | Mô tả |
 |------|---------|-------|
@@ -41,30 +47,30 @@
 
 ---
 
-## Tính năng hiện có
+## Features / Tính năng hiện có
 
-| Tính năng | Đường dẫn Frontend | Endpoint Backend chính | Mô tả ngắn |
-|-----------|--------------------|------------------------|------------|
-| **Markdown → PDF** | `/convert/md-to-pdf` | `POST /convert/md-to-pdf`<br>`POST /preview/md-to-pdf` | Upload/dán Markdown, chọn theme (`document` / `github` / `cv`), preview & tải PDF. Hỗ trợ metadata (title, subtitle, contact...) |
-| **PDF → DOCX** | `/convert/pdf-to-docx` | `POST /convert/pdf-to-docx` | Upload PDF, tùy chọn khoảng trang, tải file Word (dùng `pdf2docx`) |
-| **Audio → Text (Transcript Editor)** | `/convert/audio-to-text` | `POST /transcribe/preview`<br>`POST /transcribe/export`<br>`POST /transcribe/transcribe/audio-to-file` | Upload audio → xem & chỉnh sửa segments → xuất SRT / VTT / TXT. Hỗ trợ hint (prompt) để tăng độ chính xác |
+| Feature / Tính năng | Frontend route | Backend endpoints | Description / Mô tả |
+|---------------------|----------------|-------------------|---------------------|
+| **Markdown → PDF** | `/convert/md-to-pdf` | `POST /convert/md-to-pdf`<br>`POST /preview/md-to-pdf` | Upload or paste Markdown, choose theme (`document` / `github` / `cv`), preview & download PDF. Supports metadata (title, subtitle, contact...).<br>*Upload/dán Markdown, chọn theme, preview & tải PDF. Hỗ trợ metadata.* |
+| **PDF → DOCX** | `/convert/pdf-to-docx` | `POST /convert/pdf-to-docx` | Upload PDF, optional page range, download Word file (via `pdf2docx`).<br>*Upload PDF, tùy chọn khoảng trang, tải file Word.* |
+| **Audio → Text (Transcript Editor)** | `/convert/audio-to-text` | `POST /transcribe/preview`<br>`POST /transcribe/export`<br>`POST /transcribe/transcribe/audio-to-file` | Upload audio → view & edit segments → export SRT / VTT / TXT. Supports hint/prompt for better accuracy.<br>*Upload audio → xem & chỉnh sửa segments → xuất SRT/VTT/TXT. Hỗ trợ hint.* |
 
-**Sắp tới** (đã có route comment sẵn trong `DocForge_FE/src/route.js` và kế hoạch trong `DocForge_PyService/PLAN_video_and_translate.md`):
+**Coming soon / Sắp tới** (routes already commented in `DocForge_FE/src/route.js`, plan in `DocForge_PyService/PLAN_video_and_translate.md`):
 
 - Video → Text
-- Dịch transcript bằng AI
+- AI transcript translation / Dịch transcript bằng AI
 
 ---
 
-## Cấu trúc monorepo
+## Project structure / Cấu trúc monorepo
 
 ```
 DocForge/
 ├── DocForge_FE/                 # Frontend (Vue 3 + Vite)
 │   ├── src/
 │   │   ├── pages/client/        # Home, Mdtopdf, PdftodocxPage, TranscriptEditorPage
-│   │   ├── composables/         # Logic gọi API (useMdToPdfConverter, usePdfToDocxConverter...)
-│   │   ├── configs/             # Cấu hình API base URL
+│   │   ├── composables/         # API logic (useMdToPdfConverter, usePdfToDocxConverter...)
+│   │   ├── configs/             # API base URL config
 │   │   ├── components/
 │   │   ├── services/
 │   │   ├── route.js
@@ -97,82 +103,83 @@ DocForge/
 
 ---
 
-## Công nghệ sử dụng
+## Tech stack / Công nghệ sử dụng
 
 ### Frontend (`DocForge_FE`)
 
-| Công nghệ | Badge | Vai trò |
-|-----------|-------|---------|
-| Vue 3 | ![Vue](https://img.shields.io/badge/Vue.js-3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white) | Framework UI (Composition API) |
+| Technology | Badge | Role / Vai trò |
+|------------|-------|----------------|
+| Vue 3 | ![Vue](https://img.shields.io/badge/Vue.js-3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white) | UI framework (Composition API) |
 | Vite 7 | ![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white) | Build tool |
 | Vue Router 4 | ![Vue Router](https://img.shields.io/badge/Vue_Router-4-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white) | Routing |
 | Pinia | ![Pinia](https://img.shields.io/badge/Pinia-State-FFD859?style=flat-square&logo=pinia&logoColor=black) | State management |
 | Bootstrap 5 | ![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?style=flat-square&logo=bootstrap&logoColor=white) | UI framework + Icons |
 | VeeValidate | ![VeeValidate](https://img.shields.io/badge/VeeValidate-Form-42B883?style=flat-square) | Form validation |
 | GSAP | ![GSAP](https://img.shields.io/badge/GSAP-Animation-88CE02?style=flat-square&logo=greensock&logoColor=white) | Animation |
-| Anime.js | ![Anime.js](https://img.shields.io/badge/Anime.js-Animation-FF2D55?style=flat-square) | Animation nhẹ |
+| Anime.js | ![Anime.js](https://img.shields.io/badge/Anime.js-Animation-FF2D55?style=flat-square) | Lightweight animation |
 | Poppins / Rubik | ![Fonts](https://img.shields.io/badge/Fonts-Poppins_·_Rubik-4285F4?style=flat-square&logo=googlefonts&logoColor=white) | Typography |
 
 ### Backend (`DocForge_PyService`)
 
-| Công nghệ | Badge | Vai trò |
-|-----------|-------|---------|
+| Technology | Badge | Role / Vai trò |
+|------------|-------|----------------|
 | FastAPI | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white) | Web framework |
-| Python 3.10+ | ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white) | Ngôn ngữ |
+| Python 3.10+ | ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white) | Language |
 | Uvicorn | ![Uvicorn](https://img.shields.io/badge/Uvicorn-ASGI-499848?style=flat-square&logo=uvicorn&logoColor=white) | ASGI server |
-| WeasyPrint | ![WeasyPrint](https://img.shields.io/badge/WeasyPrint-PDF-E34F26?style=flat-square) | Render Markdown → PDF |
-| pdf2docx | ![pdf2docx](https://img.shields.io/badge/pdf2docx-PDF_to_DOCX-2B579A?style=flat-square&logo=microsoftword&logoColor=white) | Chuyển PDF → DOCX |
-| faster-whisper | ![Whisper](https://img.shields.io/badge/faster--whisper-Local-FF6F00?style=flat-square&logo=openai&logoColor=white) | Transcription local |
-| Groq API | ![Groq](https://img.shields.io/badge/Groq-API-F55036?style=flat-square) | Transcription cloud (nhanh) |
+| WeasyPrint | ![WeasyPrint](https://img.shields.io/badge/WeasyPrint-PDF-E34F26?style=flat-square) | Markdown → PDF rendering |
+| pdf2docx | ![pdf2docx](https://img.shields.io/badge/pdf2docx-PDF_to_DOCX-2B579A?style=flat-square&logo=microsoftword&logoColor=white) | PDF → DOCX conversion |
+| faster-whisper | ![Whisper](https://img.shields.io/badge/faster--whisper-Local-FF6F00?style=flat-square&logo=openai&logoColor=white) | Local transcription |
+| Groq API | ![Groq](https://img.shields.io/badge/Groq-API-F55036?style=flat-square) | Cloud transcription (fast) |
 | Pydantic | ![Pydantic](https://img.shields.io/badge/Pydantic-Settings-E92063?style=flat-square) | Config & validation |
 | Jinja2 | ![Jinja2](https://img.shields.io/badge/Jinja2-Templates-B41717?style=flat-square) | Theme templates (MD→PDF) |
 
 ---
 
-## Yêu cầu hệ thống
+## Requirements / Yêu cầu hệ thống
 
-### Chung
+### Common / Chung
 - Git
-- Node.js **18+** (khuyến nghị 20 LTS)
+- Node.js **18+** (recommended: 20 LTS)
 - Python **3.10+**
 
 ### Backend – System dependencies (WeasyPrint)
-- **Windows**: Cài [GTK3 Runtime](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases)
+- **Windows**: Install [GTK3 Runtime](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases)
 - **Linux (Ubuntu/Debian)**:
   ```bash
   sudo apt-get update
   sudo apt-get install -y libpango-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 libffi-dev
   ```
-- (Tùy chọn) GPU + CUDA nếu muốn chạy `faster-whisper` nhanh hơn trên local
-- (Tùy chọn) `ffmpeg` (dành cho tính năng Video → Text trong roadmap)
+- (Optional) GPU + CUDA for faster local `faster-whisper`
+- (Optional) `ffmpeg` (for upcoming Video → Text feature)
 
 ---
 
-## Cài đặt & Chạy local
+## Setup & Run / Cài đặt & Chạy local
 
 ### 1. Backend (DocForge_PyService)
 
 ```bash
 cd DocForge_PyService
 
-# Tạo virtual environment
+# Create virtual environment / Tạo virtual environment
 python -m venv .venv
 
-# Kích hoạt
+# Activate / Kích hoạt
 # Windows PowerShell:
 .venv\Scripts\Activate.ps1
 # Linux / macOS:
 source .venv/bin/activate
 
-# Cài dependencies (bao gồm cả dev)
+# Install dependencies (including dev) / Cài dependencies
 pip install -r requirements-dev.txt
 
-# Tạo file .env
+# Create .env file / Tạo file .env
 cp .env.example .env
+# Edit .env (especially GROQ_API_KEY if using groq engine)
 # Chỉnh sửa .env (đặc biệt GROQ_API_KEY nếu dùng engine groq)
 ```
 
-Chạy server:
+Run the server / Chạy server:
 
 ```bash
 # Development (auto-reload)
@@ -192,38 +199,40 @@ cd DocForge_FE
 
 npm install
 
-# Chạy development server
+# Development server / Chạy development server
 npm run dev
 ```
 
-Mặc định: http://localhost:5173
+Default: http://localhost:5173
 
-Frontend gọi backend tại `http://localhost:8000` (cấu hình trong `src/configs/` hoặc biến môi trường `VITE_API_BASE_URL`). CORS backend hiện cho phép `*`.
+Frontend calls the backend at `http://localhost:8000` (configured in `src/configs/` or via `VITE_API_BASE_URL`). Backend CORS currently allows `*`.
+
+*Frontend gọi backend tại `http://localhost:8000`. CORS backend hiện cho phép `*`.*
 
 ### Build production Frontend
 
 ```bash
 npm run build      # output → dist/
-npm run preview    # xem trước bản build
+npm run preview    # preview production build
 ```
 
 ---
 
-## Cấu hình Backend (`.env`)
+## Backend configuration (`.env`) / Cấu hình Backend
 
-| Biến | Mô tả | Ví dụ |
-|------|-------|-------|
-| `DEBUG` | Bật debug mode | `true` / `false` |
-| `MAX_FILE_SIZE` | Giới hạn file document (bytes) | `20971520` (20MB) |
-| `MAX_AUDIO_SIZE` | Giới hạn file audio (bytes) | `104857600` (100MB) |
-| `TRANSCRIBER_ENGINE` | Engine transcription | `local` hoặc `groq` |
-| `GROQ_API_KEY` | API key Groq (bắt buộc nếu dùng `groq`) | `gsk_...` |
-| `GROQ_MODEL` | Model Groq | `whisper-large-v3` |
-| `GROQ_MAX_BYTES` | Giới hạn file gửi lên Groq | `26214400` |
+| Variable / Biến | Description / Mô tả | Example / Ví dụ |
+|-----------------|---------------------|-----------------|
+| `DEBUG` | Enable debug mode / Bật debug mode | `true` / `false` |
+| `MAX_FILE_SIZE` | Max document file size (bytes) / Giới hạn file document | `20971520` (20MB) |
+| `MAX_AUDIO_SIZE` | Max audio file size (bytes) / Giới hạn file audio | `104857600` (100MB) |
+| `TRANSCRIBER_ENGINE` | Transcription engine / Engine transcription | `local` or `groq` |
+| `GROQ_API_KEY` | Groq API key (required if using `groq`) | `gsk_...` |
+| `GROQ_MODEL` | Groq model | `whisper-large-v3` |
+| `GROQ_MAX_BYTES` | Max file size sent to Groq | `26214400` |
 
 ---
 
-## API Endpoints chính
+## Main API Endpoints / API Endpoints chính
 
 ### Health & Info
 ```
@@ -235,28 +244,28 @@ GET /transcribe/format
 
 ### Markdown → PDF
 ```
-POST /convert/md-to-pdf          # multipart/form-data (file hoặc content)
-POST /preview/md-to-pdf          # application/json → PDF inline
+POST /convert/md-to-pdf          # multipart/form-data (file or content)
+POST /preview/md-to-pdf          # application/json → inline PDF
 ```
 
-Tham số quan trọng: `theme` (`document` | `github` | `cv`), `title`, `subtitle`, `contact`, `page_size`...
+Key params: `theme` (`document` | `github` | `cv`), `title`, `subtitle`, `contact`, `page_size`...
 
 ### PDF → DOCX
 ```
 POST /convert/pdf-to-docx        # multipart/form-data
 ```
-Tham số: `file`, `start_page` (0-indexed, optional), `end_page` (exclusive, optional)
+Params: `file`, `start_page` (0-indexed, optional), `end_page` (exclusive, optional)
 
 ### Transcription
 ```
 POST /transcribe/preview                 # upload audio → JSON segments + job_id
-POST /transcribe/export                  # segments đã sửa → SRT/VTT/TXT
-POST /transcribe/transcribe/audio-to-file  # upload audio → file ngay
+POST /transcribe/export                  # edited segments → SRT/VTT/TXT
+POST /transcribe/transcribe/audio-to-file  # upload audio → file directly
 ```
 
-Engine: `faster-whisper` (local) hoặc Groq API. Hỗ trợ `prompt` (hint) để cải thiện độ chính xác.
+Engine: `faster-whisper` (local) or Groq API. Supports `prompt` (hint) for better accuracy.
 
-Chi tiết đầy đủ xem trong `DocForge_PyService/README.md`.
+Full details in `DocForge_PyService/README.md`.
 
 ---
 
@@ -278,42 +287,44 @@ docker run -p 80:80 docforge-fe
 
 ---
 
-## Chạy Test (Backend)
+## Run Tests (Backend) / Chạy Test
 
 ```bash
 cd DocForge_PyService
 python -m pytest -v --tb=short
 
-# Test cụ thể
+# Specific tests / Test cụ thể
 python -m pytest tests/test_api.py::test_render_cv_theme -v -s
 python -m pytest tests/test_api.py::test_pdf_to_docx_success -v
 ```
 
-> Lưu ý: Một số test PDF có thể trả `422` nếu máy thiếu system libraries của WeasyPrint.
+> Note: Some PDF tests may return `422` if WeasyPrint system libraries are missing. This is expected.
+>
+> *Lưu ý: Một số test PDF có thể trả `422` nếu máy thiếu system libraries của WeasyPrint.*
 
 ---
 
-## Troubleshooting nhanh
+## Troubleshooting / Xử lý lỗi nhanh
 
-| Lỗi | Nguyên nhân | Cách xử lý |
-|-----|-------------|------------|
-| `WeasyPrint import failed` | Thiếu GTK/Pango/Cairo | Cài system dependencies như mục "Yêu cầu hệ thống" |
-| `Theme 'xyz' does not exist` | Theme chưa có | Dùng `document` / `github` / `cv` |
-| `413 File too large` | Vượt `MAX_FILE_SIZE` / `MAX_AUDIO_SIZE` | Tăng giá trị trong `.env` hoặc nén file |
-| Transcription chậm | Đang dùng engine local | Đặt `TRANSCRIBER_ENGINE=groq` + điền `GROQ_API_KEY` |
-| `Job không tồn tại` | `job_id` hết hạn (TTL ~2 giờ) | Upload lại audio |
+| Error / Lỗi | Cause / Nguyên nhân | Fix / Cách xử lý |
+|-------------|---------------------|------------------|
+| `WeasyPrint import failed` | Missing GTK/Pango/Cairo | Install system dependencies (see Requirements) |
+| `Theme 'xyz' does not exist` | Theme not found | Use `document` / `github` / `cv` |
+| `413 File too large` | Exceeds `MAX_FILE_SIZE` / `MAX_AUDIO_SIZE` | Increase value in `.env` or compress file |
+| Slow transcription | Using local engine | Set `TRANSCRIBER_ENGINE=groq` + add `GROQ_API_KEY` |
+| `Job not found` / Job không tồn tại | `job_id` expired (TTL ~2 hours) | Re-upload audio |
 
 ---
 
-## Roadmap ngắn hạn
+## Roadmap / Lộ trình ngắn hạn
 
-Xem chi tiết trong:
+See details in / Xem chi tiết trong:
 
 - `DocForge_PyService/PLAN_video_and_translate.md`
 - `DocForge_PyService/Transcript-editor-plan.md`
 
-1. **Video → Text** (tách audio bằng ffmpeg + hỗ trợ link YouTube hợp pháp)
-2. **Dịch transcript bằng AI** (dịch thoát nghĩa, tự nhiên theo ngữ cảnh)
+1. **Video → Text** (extract audio with ffmpeg + legitimate YouTube links)
+2. **AI transcript translation** / Dịch transcript bằng AI (natural, context-aware)
 
 ---
 
@@ -323,5 +334,11 @@ Xem chi tiết trong:
 
 MIT
 
-> Ghi chú: File `LICENSE` hiện có trong `app/converters/templates/markdown/github/` là license của thư viện bên thứ ba (`github-markdown-css`), không phải license của toàn bộ dự án. Nên Hiện tại file `LICENSE` (MIT chuẩn) đang đặt tại `DocForge_PyService/`.
+> Project license (MIT) is currently at `DocForge_PyService/LICENSE`. Recommended: also place a `LICENSE` file at the **repository root** so GitHub detects it correctly.
+>
+> *License dự án (MIT) hiện tại nằm tại `DocForge_PyService/LICENSE`. Khuyến nghị: đặt thêm file `LICENSE` ở **root** repo để GitHub nhận diện đúng.*
+>
+> The file under `app/converters/templates/markdown/github/` belongs to the third-party library `github-markdown-css`, not the project itself.
+>
+> *File `LICENSE` trong `app/converters/templates/markdown/github/` thuộc thư viện bên thứ ba (`github-markdown-css`), không phải của dự án.*
 ```
