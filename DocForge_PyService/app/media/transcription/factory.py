@@ -2,7 +2,6 @@
 Đổi ENGINE mặc định bằng cách cài đặt biến môi trường TRANSCRIBER_ENGINE=whisper-local|groq|..."""
 from __future__ import annotations
 
-import os
 from functools import lru_cache
 from app.core.config import settings
 from app.media.transcription.base import TranscriberBase

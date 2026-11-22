@@ -3,6 +3,7 @@ Strategy pattern: mỗi converter sẽ implement interface này. Để dễ thê
 from __future__ import annotations
 
 import abc
+from typing import Any
 from pathlib import Path
 
 class ConversionError(Exception):

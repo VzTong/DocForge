@@ -1,0 +1,43 @@
+name: ci-fe
+
+on:
+  pull_request:
+    paths:
+      - "DocForge_FE/**"
+      - ".github/workflows/ci-fe.yml"
+  push:
+    branches: [main]
+    paths:
+      - "DocForge_FE/**"
+      - ".github/workflows/ci-fe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DocForge_FE
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          # Không dùng cache-dependency-path vì package-lock.json đang bị gitignore
+          # cache: npm
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build
+        run: npm run build

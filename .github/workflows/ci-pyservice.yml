@@ -1,0 +1,54 @@
+name: ci-pyservice
+
+on:
+  pull_request:
+    paths:
+      - "DocForge_PyService/**"
+      - ".github/workflows/ci-pyservice.yml"
+  push:
+    branches: [main]
+    paths:
+      - "DocForge_PyService/**"
+      - ".github/workflows/ci-pyservice.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DocForge_PyService
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: DocForge_PyService/requirements*.txt
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
+            libffi-dev libcairo2 fonts-liberation libgl1 libglib2.0-0 \
+            ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint with ruff
+        run: ruff check .
+
+      - name: Run tests
+        run: pytest -v --tb=short --cov=app --cov-report=term-missing
+
+      - name: Docker build
+        run: docker build -t docforge-pyservice:ci .

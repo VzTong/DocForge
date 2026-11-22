@@ -221,7 +221,7 @@ async def transcribe_preview(
             status_code=422,
             detail=f"Lỗi khi xử lý transcription: {e}",
         ) from e
-    except Exception as e:
+    except Exception:
         if audio_file:
             shutil.rmtree(job_dir, ignore_errors=True)
         raise
